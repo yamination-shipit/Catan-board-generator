@@ -27,6 +27,9 @@
         .board-container {
             animation: fadeIn 0.5s ease-out;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="font-sans">
@@ -78,6 +81,31 @@
             <div id="current-seed" class="mt-4 text-sm text-gray-600 font-mono bg-gray-50 p-3 rounded-lg"></div>
         </div>
 
+        <!-- 2-Player Setup Instructions -->
+        <div id="setup-instructions" class="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-lg p-6 mb-6 hidden">
+            <h3 class="text-lg font-bold text-yellow-900 mb-3 flex items-center">
+                <span class="text-2xl mr-2">👥</span> 2-Player Setup Instructions
+            </h3>
+            <div class="space-y-3 text-sm text-yellow-900">
+                <p class="font-semibold">Neutral Settlements (marked with "N" on the board):</p>
+                <ol class="list-decimal list-inside space-y-2 ml-2">
+                    <li><strong>Place 8 neutral settlements</strong> at the positions marked with gray "N" circles on the board vertices</li>
+                    <li><strong>Each player starts with:</strong>
+                        <ul class="list-disc list-inside ml-6 mt-1">
+                            <li>2 settlements and 2 roads (place after neutral settlements)</li>
+                            <li>Standard starting resources from second settlement</li>
+                        </ul>
+                    </li>
+                    <li><strong>Gameplay:</strong> Neutral settlements block building positions but don't collect resources</li>
+                    <li><strong>Victory Points:</strong> First to 10 points wins (standard rules apply)</li>
+                </ol>
+                <div class="mt-4 p-3 bg-yellow-100 rounded border border-yellow-300">
+                    <p class="font-semibold mb-1">💡 Why neutral settlements?</p>
+                    <p class="text-xs">They balance the game by limiting expansion and preventing one player from dominating resource-rich areas, creating strategic tension similar to 3-4 player games.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Board Display -->
         <div class="bg-white rounded-lg shadow-2xl p-4 md:p-8 board-container">
             <div id="board-container" class="flex justify-center items-center min-h-[500px]">
@@ -97,7 +125,8 @@
                     <li>✓ No adjacent 6s and 8s (highest probability tiles)</li>
                     <li>✓ Even distribution of resources across the board</li>
                     <li>✓ Balanced pip counts (probability distribution)</li>
-                    <li>✓ 2-Player mode uses a compact 13-hex layout</li>
+                    <li>✓ Resource diversity in hex neighborhoods</li>
+                    <li>✓ 2-Player mode uses full 19-hex board with 8 neutral settlements</li>
                 </ul>
             </div>
         </div>
@@ -149,38 +178,47 @@
         };
 
         // Board layouts (positions for hexes)
+        const STANDARD_LAYOUT = [
+            // 19 hexes in standard Catan layout
+            { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 },
+            { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 },
+            { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }, { row: 2, col: 4 },
+            { row: 3, col: 0 }, { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 3, col: 3 },
+            { row: 4, col: 0 }, { row: 4, col: 1 }, { row: 4, col: 2 }
+        ];
+
         const LAYOUTS = {
-            '3-4': [
-                // 19 hexes in standard Catan layout
-                { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 },
-                { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 },
-                { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }, { row: 2, col: 4 },
-                { row: 3, col: 0 }, { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 3, col: 3 },
-                { row: 4, col: 0 }, { row: 4, col: 1 }, { row: 4, col: 2 }
-            ],
-            '2': [
-                // 13 hexes in compact layout for 2 players
-                { row: 0, col: 1 }, { row: 0, col: 2 },
-                { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 },
-                { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 },
-                { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 3, col: 3 }
-            ]
+            '3-4': STANDARD_LAYOUT,
+            '2': STANDARD_LAYOUT  // 2-player mode uses same 19-hex board with ghost settlements
         };
 
-        // Resource distribution
+        // Ghost settlement positions for 2-player mode
+        // These are vertex coordinates (intersection points between hexes)
+        const GHOST_SETTLEMENTS = [
+            { hexRow: 0, hexCol: 0, vertex: 0 },  // Top of top-left hex
+            { hexRow: 0, hexCol: 2, vertex: 1 },  // Top-right of top-right hex
+            { hexRow: 2, hexCol: 0, vertex: 4 },  // Bottom-left of middle-left hex
+            { hexRow: 2, hexCol: 4, vertex: 2 },  // Bottom-right of middle-right hex
+            { hexRow: 4, hexCol: 0, vertex: 3 },  // Bottom of bottom-left hex
+            { hexRow: 4, hexCol: 2, vertex: 4 },  // Bottom of bottom-right hex
+            { hexRow: 1, hexCol: 1, vertex: 0 },  // Strategic interior position
+            { hexRow: 3, hexCol: 2, vertex: 3 }   // Strategic interior position
+        ];
+
+        // Resource distribution (same for both modes - standard Catan)
         const RESOURCE_DIST = {
             '3-4': {
                 wood: 4, brick: 3, sheep: 4, wheat: 4, ore: 3, desert: 1
             },
             '2': {
-                wood: 3, brick: 2, sheep: 3, wheat: 3, ore: 2, desert: 0
+                wood: 4, brick: 3, sheep: 4, wheat: 4, ore: 3, desert: 1
             }
         };
 
-        // Number distribution
+        // Number distribution (same for both modes - standard Catan)
         const NUMBER_DIST = {
             '3-4': [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12],
-            '2': [2, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 10, 11]
+            '2': [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
         };
 
         // Global state
@@ -383,7 +421,7 @@
         }
 
         function renderBoard(board, mode) {
-            const hexSize = mode === '3-4' ? 60 : 70;
+            const hexSize = 60;  // Same size for both modes now
             const hexWidth = hexSize * 2;
             const hexHeight = hexSize * Math.sqrt(3);
 
@@ -397,6 +435,7 @@
 
             let svg = `<svg viewBox="0 0 ${svgWidth} ${svgHeight}" class="max-w-full h-auto">`;
 
+            // Render hexes
             for (const hex of board) {
                 const x = hex.col * hexWidth * 0.75 + hexWidth / 2;
                 const y = hex.row * hexHeight + (hex.row % 2 === 0 ? 0 : hexHeight / 2) + hexHeight / 2;
@@ -404,8 +443,44 @@
                 svg += renderHex(x, y, hexSize, hex);
             }
 
+            // Render ghost settlements for 2-player mode
+            if (mode === '2') {
+                for (const ghost of GHOST_SETTLEMENTS) {
+                    const hex = board.find(h => h.row === ghost.hexRow && h.col === ghost.hexCol);
+                    if (hex) {
+                        const hexX = ghost.hexCol * hexWidth * 0.75 + hexWidth / 2;
+                        const hexY = ghost.hexRow * hexHeight + (ghost.hexRow % 2 === 0 ? 0 : hexHeight / 2) + hexHeight / 2;
+                        const vertexPos = getVertexPosition(hexX, hexY, hexSize, ghost.vertex);
+
+                        svg += `<circle cx="${vertexPos.x}" cy="${vertexPos.y}" r="8" fill="#666" stroke="#fff" stroke-width="2" opacity="0.8"/>`;
+                        svg += `<text x="${vertexPos.x}" y="${vertexPos.y}" text-anchor="middle" font-size="10" fill="white" dominant-baseline="middle" font-weight="bold">N</text>`;
+                    }
+                }
+            }
+
             svg += '</svg>';
             container.innerHTML = svg;
+
+            // Show setup instructions for 2-player mode
+            updateSetupInstructions(mode);
+        }
+
+        function getVertexPosition(hexX, hexY, hexSize, vertexIndex) {
+            // Calculate position of a hex vertex (0-5, starting from top and going clockwise)
+            const angle = (Math.PI / 3) * vertexIndex - Math.PI / 2;
+            return {
+                x: hexX + hexSize * Math.cos(angle),
+                y: hexY + hexSize * Math.sin(angle)
+            };
+        }
+
+        function updateSetupInstructions(mode) {
+            const instructionsEl = document.getElementById('setup-instructions');
+            if (mode === '2') {
+                instructionsEl.classList.remove('hidden');
+            } else {
+                instructionsEl.classList.add('hidden');
+            }
         }
 
         function renderHex(x, y, size, hex) {
