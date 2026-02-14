@@ -6,7 +6,7 @@ A professional, balanced Catan board generator with automatic GitHub Pages deplo
 
 ### Game Modes
 - **3-4 Players**: Standard 19-hex Catan board
-- **2 Players**: Compact 13-hex layout optimized for two players
+- **2 Players**: Full 19-hex board with 8 neutral settlements (ghost player variant)
 
 ### Board Balancing
 The generator uses intelligent algorithms to create balanced boards:
@@ -20,12 +20,21 @@ The generator uses intelligent algorithms to create balanced boards:
 - Share specific boards with friends via URL
 - Copy seed or full URL to clipboard
 
-### 2-Player Mode Adjustments
-The 2-player mode uses a specialized 13-hex layout:
-- Compact hexagonal arrangement
-- Adjusted resource distribution (no desert tile)
-- Smaller number pool for balanced gameplay
-- All balancing rules still apply
+### 2-Player Mode Setup
+The 2-player mode uses the full 19-hex board with neutral settlements:
+
+**Setup Instructions:**
+1. **Board**: Use the standard 19-hex board (same as 3-4 players)
+2. **Neutral Settlements**: Place 8 neutral/ghost settlements at the marked positions (shown as gray "N" circles on vertices)
+3. **Starting Placement**: Each player places 2 settlements and 2 roads after neutral settlements are placed
+4. **Gameplay**: Neutral settlements block building but don't collect resources
+5. **Victory**: First to 10 points wins
+
+**Why Neutral Settlements?**
+- Balances the game by limiting expansion options
+- Prevents domination of resource-rich areas
+- Creates strategic tension similar to 3-4 player games
+- Standard competitive 2-player Catan variant
 
 ## Live Demo
 
