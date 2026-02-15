@@ -50,5 +50,8 @@ xdg-open index.html      # Linux
 - SVG elements use string concatenation (no DOM API)
 - Hex positions use row/col offset coordinates, not axial/cube
 
+## Workflow
+- Always commit and push when done with a task, unless explicitly instructed otherwise.
+
 ## Deployment
 Pushes to `master` trigger the GitHub Actions workflow (`.github/workflows/static.yml`) which deploys to GitHub Pages automatically.
