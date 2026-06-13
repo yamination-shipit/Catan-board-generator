@@ -75,7 +75,8 @@ The 2-player mode supports multiple table setups:
 ## Live Demo
 
 Visit the live application at:
-[https://yamination-shipit.github.io/Catan-board-generator](here) 
+
+https://yamination-shipit.github.io/Catan-board-generator
 
 ## Local Development
 
