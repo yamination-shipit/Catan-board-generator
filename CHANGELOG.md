@@ -4,7 +4,6 @@ Release notes are managed by Release Please from Conventional Commits.
 
 ## [0.2.0](https://github.com/yamination-shipit/Catan-board-generator/compare/v0.1.1...v0.2.0) (2026-06-13)
 
-
 ### Features
 
 * **board:** add seed-safe expansion options ([387ffaf](https://github.com/yamination-shipit/Catan-board-generator/commit/387ffafc76d96aeabed648cdea3a5a6739bc6677))
