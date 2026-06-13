@@ -9,8 +9,7 @@
   "fmt": {
     "include": [
       ".github/workflows/",
-      ".plans/20260613-1322-in-progress-typescript-hardening.md",
-      "CHANGELOG.md",
+      ".plans/",
       "CLAUDE.md",
       "HANDOVER.md",
       "README.md",

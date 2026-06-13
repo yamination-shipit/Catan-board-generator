@@ -15,9 +15,11 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          pattern='^(feat|fix|docs|test|refactor|chore|build|ci|perf)(\([a-z0-9-]+\))?!?: .+'
-          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
-            echo "PR title must follow Conventional Commits, for example: feat(board): add typed generator"
+          conventional='^(feat|fix|docs|test|refactor|chore|build|ci|perf)(\([a-z0-9-]+\))?!?: .+'
+          generated='^[A-Z][^[:cntrl:]]{2,}$'
+          if [[ ! "$PR_TITLE" =~ $conventional && ! "$PR_TITLE" =~ $generated ]]; then
+            echo "PR title must be Conventional Commits, for example: feat(board): add typed generator"
+            echo "Generated GitHub titles are also allowed for automated repair and release PRs."
             echo "Actual: $PR_TITLE"
             exit 1
           fi
