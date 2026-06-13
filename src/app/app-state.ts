@@ -1,5 +1,14 @@
-import type { BoardView, Challenge, GenerationSelection, Mode, Variant } from "../types.ts";
+import type {
+  BoardView,
+  Challenge,
+  Expansion,
+  GenerationSelection,
+  Mode,
+  RulePreset,
+  Variant,
+} from "../types.ts";
 import { createBoardView } from "../domain/board.ts";
+import { defaultSelection } from "../domain/options.ts";
 
 export interface AppState {
   readonly selection: GenerationSelection;
@@ -34,6 +43,20 @@ export function withChallenges(state: AppState, challenges: readonly Challenge[]
   };
 }
 
+export function withExpansions(state: AppState, expansions: readonly Expansion[]): AppState {
+  return {
+    ...state,
+    selection: normalizeSelection({ ...state.selection, expansions: [...expansions] }),
+  };
+}
+
+export function withRulePreset(state: AppState, rulePreset: RulePreset): AppState {
+  return {
+    ...state,
+    selection: normalizeSelection({ ...state.selection, rulePreset }),
+  };
+}
+
 export function withBoard(state: AppState, seed: string): AppState {
   return {
     ...state,
@@ -46,5 +69,7 @@ function normalizeSelection(selection: GenerationSelection): GenerationSelection
     mode: selection.mode,
     variant: selection.variant,
     challenges: [...new Set(selection.challenges)],
+    expansions: [...new Set(selection.expansions ?? defaultSelection.expansions)],
+    rulePreset: selection.rulePreset ?? defaultSelection.rulePreset,
   };
 }

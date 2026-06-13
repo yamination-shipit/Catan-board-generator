@@ -2,6 +2,8 @@ export type Resource = "wood" | "brick" | "sheep" | "wheat" | "ore" | "desert";
 export type Mode = "3-4" | "2";
 export type LayoutKey = Mode | "compact";
 export type Challenge = "scarce" | "harbors" | "neutral";
+export type Expansion = "five-six-players" | "seafarers" | "cities-knights";
+export type RulePreset = "balanced-neutral" | "open-duel" | "long-game";
 export type Variant =
   | "full-neutral"
   | "full-open"
@@ -46,6 +48,8 @@ export interface GenerationSelection {
   readonly mode: Mode;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
+  readonly expansions: readonly Expansion[];
+  readonly rulePreset: RulePreset;
 }
 
 export interface GenerationOptions {
@@ -53,6 +57,8 @@ export interface GenerationOptions {
   readonly compact: boolean;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
+  readonly expansions: readonly Expansion[];
+  readonly rulePreset: RulePreset;
   readonly scarceResource: Resource | null;
 }
 
@@ -76,6 +82,8 @@ export interface SeedHistoryEntry {
   readonly mode: Mode;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
+  readonly expansions?: readonly Expansion[];
+  readonly rulePreset?: RulePreset;
   readonly difficulty: DifficultyRating | null;
   readonly createdAt: string;
 }

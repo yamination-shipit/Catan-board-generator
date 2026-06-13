@@ -1,11 +1,13 @@
 import type {
   Challenge,
+  Expansion,
   GhostSettlement,
   HexLayout,
   LayoutKey,
   Port,
   Resource,
   ResourceDefinition,
+  RulePreset,
   Variant,
 } from "../types.ts";
 
@@ -108,6 +110,51 @@ export const CHALLENGE_NAMES: Record<Challenge, string> = {
   scarce: "Scarce resources",
   harbors: "Harbor scramble",
   neutral: "Neutral pressure",
+};
+
+export const EXPANSION_NAMES: Record<Expansion, string> = {
+  "five-six-players": "5-6 player extension",
+  seafarers: "Seafarers",
+  "cities-knights": "Cities & Knights",
+};
+
+export const RULE_PRESET_NAMES: Record<RulePreset, string> = {
+  "balanced-neutral": "Balanced neutral setup",
+  "open-duel": "Open duel",
+  "long-game": "Long game",
+};
+
+export const RULE_PRESETS: Record<
+  RulePreset,
+  {
+    readonly startingSettlements: number;
+    readonly startingRoads: number;
+    readonly neutralRoads: boolean;
+    readonly victoryPoints: number;
+    readonly summary: string;
+  }
+> = {
+  "balanced-neutral": {
+    startingSettlements: 2,
+    startingRoads: 2,
+    neutralRoads: true,
+    victoryPoints: 10,
+    summary: "Use neutral blockers and neutral roads where the board marks them.",
+  },
+  "open-duel": {
+    startingSettlements: 2,
+    startingRoads: 2,
+    neutralRoads: false,
+    victoryPoints: 10,
+    summary: "Use the selected board with normal starting placement and no neutral roads.",
+  },
+  "long-game": {
+    startingSettlements: 2,
+    startingRoads: 2,
+    neutralRoads: true,
+    victoryPoints: 12,
+    summary: "Use neutral blockers and neutral roads, then play to a longer victory target.",
+  },
 };
 
 export const PORTS: readonly Port[] = [

@@ -32,10 +32,14 @@
   "lint": {
     "rules": {}
   },
+  "imports": {
+    "playwright": "npm:playwright@1.52.0"
+  },
   "tasks": {
     "setup": "deno run --allow-read --allow-write --allow-env --allow-run scripts/setup.ts",
     "check": "deno fmt --check && deno lint && deno check src/main.ts scripts/build.ts scripts/setup.ts scripts/serve.ts",
-    "test": "deno test --allow-read",
+    "test": "deno test --allow-read tests/domain_behavior_test.ts",
+    "test:honeycomb": "deno task build && deno test --allow-read --allow-write=/tmp --allow-net=127.0.0.1:8091 --allow-env --allow-run --allow-sys tests/honeycomb_behavior_test.ts",
     "build": "deno run --allow-read --allow-write --allow-run scripts/build.ts",
     "ci": "deno task check && deno task test && deno task build",
     "serve": "deno task build && deno run --allow-read=dist --allow-net=127.0.0.1:8080 scripts/serve.ts"
