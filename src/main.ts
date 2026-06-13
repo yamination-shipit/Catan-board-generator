@@ -495,6 +495,11 @@ let zoomState = { scale: 1, panX: 0, panY: 0 };
 let applyZoom = (): void => {};
 let zoomAbortController: AbortController | null = null;
 
+type Point = {
+  readonly x: number;
+  readonly y: number;
+};
+
 function initZoom(): void {
   zoomAbortController?.abort();
   zoomAbortController = new AbortController();
@@ -507,8 +512,6 @@ function initZoom(): void {
   };
 
   let isPanning = false;
-  let startX = 0;
-  let startY = 0;
   const setScale = (nextScale: number, cx: number, cy: number) => {
     const previous = zoomState.scale;
     const scale = Math.min(4, Math.max(0.2, nextScale));
@@ -517,8 +520,42 @@ function initZoom(): void {
       panX: cx - (cx - zoomState.panX) * (scale / previous),
       panY: cy - (cy - zoomState.panY) * (scale / previous),
     };
+    clampPan();
     applyZoom();
   };
+
+  const boardSize = () => {
+    const svg = byId("board-svg") as unknown as SVGSVGElement;
+    const viewBox = svg.viewBox.baseVal;
+    return {
+      height: viewBox.height || Number(svg.getAttribute("height")) || 1,
+      width: viewBox.width || Number(svg.getAttribute("width")) || 1,
+    };
+  };
+  const clampAxis = (pan: number, wrapperSize: number, contentSize: number) => {
+    const scaledSize = contentSize * zoomState.scale;
+    const minVisible = Math.min(48, wrapperSize * 0.35, scaledSize);
+    return Math.min(wrapperSize - minVisible, Math.max(minVisible - scaledSize, pan));
+  };
+  const clampPan = () => {
+    const rect = wrapper.getBoundingClientRect();
+    const size = boardSize();
+    zoomState = {
+      ...zoomState,
+      panX: clampAxis(zoomState.panX, rect.width, size.width),
+      panY: clampAxis(zoomState.panY, rect.height, size.height),
+    };
+  };
+  const pointFromEvent = (event: PointerEvent): Point => ({
+    x: event.clientX,
+    y: event.clientY,
+  });
+  const distanceBetween = (first: Point, second: Point) =>
+    Math.hypot(first.x - second.x, first.y - second.y);
+  const midpoint = (first: Point, second: Point): Point => ({
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2,
+  });
 
   wrapper.addEventListener("wheel", (event) => {
     event.preventDefault();
@@ -530,19 +567,69 @@ function initZoom(): void {
     );
   }, { passive: false, signal: zoomAbortController.signal });
 
-  wrapper.addEventListener("mousedown", (event) => {
-    if (event.button !== 0) return;
-    isPanning = true;
-    startX = event.clientX - zoomState.panX;
-    startY = event.clientY - zoomState.panY;
+  const activePointers = new Map<number, Point>();
+  let lastPanPoint: Point | null = null;
+  let pinchStart: { readonly distance: number; readonly scale: number } | null = null;
+
+  wrapper.addEventListener("pointerdown", (event) => {
+    if (event.target instanceof Element && event.target.closest(".zoom-controls")) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    wrapper.setPointerCapture(event.pointerId);
+    activePointers.set(event.pointerId, pointFromEvent(event));
+    isPanning = activePointers.size === 1;
+    lastPanPoint = activePointers.size === 1 ? pointFromEvent(event) : null;
+    pinchStart = null;
   }, { signal: zoomAbortController.signal });
-  globalThis.addEventListener("mousemove", (event) => {
-    if (!isPanning) return;
-    zoomState = { ...zoomState, panX: event.clientX - startX, panY: event.clientY - startY };
+
+  wrapper.addEventListener("pointermove", (event) => {
+    if (!activePointers.has(event.pointerId)) return;
+    event.preventDefault();
+    activePointers.set(event.pointerId, pointFromEvent(event));
+    const points = [...activePointers.values()];
+    if (points.length >= 2) {
+      const [first, second] = points;
+      if (!first || !second) return;
+      const distance = distanceBetween(first, second);
+      const center = midpoint(first, second);
+      const rect = wrapper.getBoundingClientRect();
+      pinchStart ??= { distance, scale: zoomState.scale };
+      setScale(
+        pinchStart.scale * (distance / Math.max(1, pinchStart.distance)),
+        center.x - rect.left,
+        center.y - rect.top,
+      );
+      return;
+    }
+    if (!isPanning || !lastPanPoint || !points[0]) return;
+    const point = points[0];
+    zoomState = {
+      ...zoomState,
+      panX: zoomState.panX + point.x - lastPanPoint.x,
+      panY: zoomState.panY + point.y - lastPanPoint.y,
+    };
+    clampPan();
+    lastPanPoint = point;
     applyZoom();
   }, { signal: zoomAbortController.signal });
-  globalThis.addEventListener("mouseup", () => {
-    isPanning = false;
+
+  const endPointer = (event: PointerEvent) => {
+    if (!activePointers.has(event.pointerId)) return;
+    activePointers.delete(event.pointerId);
+    if (wrapper.hasPointerCapture(event.pointerId)) wrapper.releasePointerCapture(event.pointerId);
+    const remaining = [...activePointers.values()];
+    isPanning = remaining.length === 1;
+    lastPanPoint = remaining[0] ?? null;
+    pinchStart = null;
+  };
+  wrapper.addEventListener("pointerup", endPointer, { signal: zoomAbortController.signal });
+  wrapper.addEventListener("pointercancel", endPointer, { signal: zoomAbortController.signal });
+  wrapper.addEventListener("lostpointercapture", (event) => {
+    activePointers.delete(event.pointerId);
+    const remaining = [...activePointers.values()];
+    isPanning = remaining.length === 1;
+    lastPanPoint = remaining[0] ?? null;
+    pinchStart = null;
   }, { signal: zoomAbortController.signal });
 
   byId("zoom-in-btn").addEventListener("click", () => {

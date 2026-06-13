@@ -16,4 +16,13 @@ and touch interaction works without forcing a desktop-width layout.
 
 ## Status
 
-- Planned before implementation.
+- Done.
+
+## Validation
+
+- `just check`
+- `just test`
+- `just test-honeycomb`
+- `just ci`
+- Manual Pixel 5 Chromium render at `http://127.0.0.1:8080/`: document client width,
+  document scroll width, and body scroll width all measured `393px`.

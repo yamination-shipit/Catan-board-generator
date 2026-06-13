@@ -20,10 +20,13 @@ Deno.test({
       await page.waitForSelector("#board-svg");
 
       // Act / Assert
+      await assertMobileLayoutFits(page);
       await assertBoardFits(page);
+      await assertPointerPanMovesBoard(page);
 
       await page.locator("#generate-btn").click();
       await page.waitForSelector("#board-svg");
+      await assertMobileLayoutFits(page);
       await assertBoardFits(page);
 
       await page.locator("#collapse-all-btn").click();
@@ -44,6 +47,7 @@ Deno.test({
       await page.locator("#expansion-seafarers").check();
       await page.waitForFunction(() => location.search.includes("expansions=seafarers"));
       assert.ok(new URL(page.url()).searchParams.get("expansions")?.includes("seafarers"));
+      await assertMobileLayoutFits(page);
       await assertBoardFits(page);
     } finally {
       await closeBrowser(browser);
@@ -69,6 +73,30 @@ function startStaticServer(): Deno.HttpServer {
   });
 }
 
+async function assertMobileLayoutFits(page: Page): Promise<void> {
+  const viewport = page.viewportSize();
+  assert.ok(viewport);
+  const pageWidths = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  assert.ok(
+    pageWidths.scroll <= pageWidths.client + 1,
+    `expected page width ${pageWidths.scroll}px to fit viewport ${pageWidths.client}px`,
+  );
+
+  for (
+    const selector of ["#board-panel", "main > section:nth-child(2)", "main > section:last-child"]
+  ) {
+    const box = await page.locator(selector).boundingBox();
+    assert.ok(box);
+    assert.ok(
+      box.x >= -1 && box.x + box.width <= viewport.width + 1,
+      `expected ${selector} to fit within ${viewport.width}px viewport`,
+    );
+  }
+}
+
 async function assertBoardFits(page: Page): Promise<void> {
   const wrapper = await page.locator("#zoom-wrapper").boundingBox();
   const board = await page.locator("#board-svg").boundingBox();
@@ -77,6 +105,24 @@ async function assertBoardFits(page: Page): Promise<void> {
   assert.ok(board.width <= wrapper.width + 2);
   assert.ok(board.height <= wrapper.height + 2);
   assert.ok(board.width >= wrapper.width * 0.5);
+}
+
+async function assertPointerPanMovesBoard(page: Page): Promise<void> {
+  const wrapper = await page.locator("#zoom-wrapper").boundingBox();
+  assert.ok(wrapper);
+  const before = await page.locator("#zoom-content").evaluate((node) =>
+    getComputedStyle(node).transform
+  );
+
+  await page.mouse.move(wrapper.x + wrapper.width / 2, wrapper.y + wrapper.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(wrapper.x + wrapper.width / 2 + 40, wrapper.y + wrapper.height / 2 + 24);
+  await page.mouse.up();
+
+  const after = await page.locator("#zoom-content").evaluate((node) =>
+    getComputedStyle(node).transform
+  );
+  assert.notEqual(after, before);
 }
 
 async function closeBrowser(browser: Browser): Promise<void> {
