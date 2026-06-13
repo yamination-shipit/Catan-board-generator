@@ -1,6 +1,6 @@
 # Catan Game Options And Seed History
 
-Status: in-progress
+Status: done
 Branch: `codex/catan-game-options-history`
 
 ## Goal
@@ -23,8 +23,9 @@ Add richer board-generation controls while keeping the app single-file and direc
 - `node --check` passed for the inline JavaScript extracted from `index.html`.
 - Node smoke confirmed tight 2-player variant with all challenges produces 12 neutral markers, 9 ports, 19 board hexes, and seed history entries.
 - Local preview server responds at `http://127.0.0.1:8765/`.
-- Android browser preview before push.
+- Local Android-accessible preview server responded at `http://127.0.0.1:8765/`.
 
 ## Completion
 
-- Rename this plan to `done`, update handover, commit logical slices, and push the branch.
+- Plan and handover updated.
+- Branch pushed to `origin/codex/catan-game-options-history`.

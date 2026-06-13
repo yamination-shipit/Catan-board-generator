@@ -1,6 +1,6 @@
 # Catan Game Options And Seed History
 
-Plan: `.plans/20260613-0846-in-progress-catan-game-options-history.md`
+Plan: `.plans/20260613-0846-done-catan-game-options-history.md`
 Branch: `codex/catan-game-options-history`
 
 ## Current State
@@ -12,7 +12,8 @@ Branch: `codex/catan-game-options-history`
 - 2-player rules are collapsible.
 - 2-player variants are available, defaulting to the full 19-hex board with neutral settlements.
 - Challenges currently include scarce resources, harbor scramble, and neutral pressure.
-- Local preview server is running at `http://127.0.0.1:8765/`.
+- Local preview server responded at `http://127.0.0.1:8765/`.
+- Branch was pushed to `origin/codex/catan-game-options-history`.
 
 ## Validation
 
@@ -21,4 +22,4 @@ Branch: `codex/catan-game-options-history`
 
 ## Next Action
 
-Preview on Android, then mark the plan done and push this branch.
+Review or merge the pushed branch.
