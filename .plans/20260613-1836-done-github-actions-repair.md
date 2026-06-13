@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Done.
 
 ## Goal
 
@@ -11,8 +11,8 @@ README with the live site link.
 
 ## Root Cause
 
-- Pages failed because Release Please generated a `CHANGELOG.md` entry that `deno fmt --check`
-  wants to wrap.
+- Pages failed because Release Please generated a `CHANGELOG.md` entry that `deno fmt --check` wants
+  to wrap.
 - PR title validation rejects existing title-case/generated titles for this repository.
 - `deno.json` also contains a stale file-specific `.plans/` formatter include, which makes plan
   renames brittle.
@@ -26,6 +26,7 @@ README with the live site link.
 
 ## Validation
 
-- Pending: `deno fmt --check CHANGELOG.md README.md deno.json .github/workflows/pr-title.yml`
-- Pending: PR title regex smoke checks
-- Pending: `just ci`
+- Passed: `deno fmt --check CHANGELOG.md README.md deno.json .github/workflows/pr-title.yml`
+- Passed: PR title regex smoke checks for Conventional Commit, generated Codex title, and GitHub
+  security-fix title.
+- Passed: `just ci`
