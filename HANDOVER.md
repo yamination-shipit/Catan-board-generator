@@ -5,9 +5,9 @@ Current session state lives in dated files under `handover/`.
 Before ending non-trivial work, update this file with the latest handover note and keep the active
 `.plans/` file current.
 
-Latest note: `handover/20260613-1744--seed-safe-expansions-honeycomb.md`
+Latest note: `handover/20260613-1836--github-actions-repair.md`
 
-Latest plan: `.plans/20260613-1744-done-seed-safe-expansions-honeycomb.md`.
+Latest plan: `.plans/20260613-1836-done-github-actions-repair.md`.
 
-Current work added seed-safe expansion metadata, 2-player rule presets, neutral road overlays,
-collapse/expand behavior, board fit zoom reset, ADR guidance, and opt-in honeycomb browser tests.
+Current work repaired the Pages formatter failure, relaxed PR title validation for generated GitHub
+titles, formatted tracked plan docs, and updated the README live demo URL.
