@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "lib": ["deno.ns", "dom", "dom.iterable", "esnext"],
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "strict": true
+  },
+  "fmt": {
+    "include": [
+      ".github/workflows/",
+      ".plans/20260613-1322-in-progress-typescript-hardening.md",
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "HANDOVER.md",
+      "README.md",
+      "deno.json",
+      "docs/adr/",
+      "index.html",
+      "justfile",
+      "release-please-config.json",
+      "renovate.json",
+      "scripts/",
+      "src/",
+      "tests/"
+    ],
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "semiColons": true,
+    "singleQuote": false
+  },
+  "lint": {
+    "rules": {}
+  },
+  "tasks": {
+    "setup": "deno run --allow-read --allow-write --allow-env --allow-run scripts/setup.ts",
+    "check": "deno fmt --check && deno lint && deno check src/main.ts scripts/build.ts scripts/setup.ts scripts/serve.ts",
+    "test": "deno test --allow-read",
+    "build": "deno run --allow-read --allow-write --allow-run scripts/build.ts",
+    "ci": "deno task check && deno task test && deno task build",
+    "serve": "deno task build && deno run --allow-read=dist --allow-net=127.0.0.1:8080 scripts/serve.ts"
+  }
+}

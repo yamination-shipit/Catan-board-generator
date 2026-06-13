@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catan Board Generator</title>
+    <link rel="stylesheet" href="./assets/app.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <h1>Catan Board Generator</h1>
+          <p>Balanced boards, saved seeds, fast table setup</p>
+        </div>
+        <div class="header-actions">
+          <button id="theme-toggle-btn" class="secondary">Dark</button>
+          <button id="collapse-all-btn" class="secondary">Collapse</button>
+        </div>
+      </header>
+
+      <main class="main-grid">
+        <section id="board-panel" class="panel board-panel">
+          <div class="board-toolbar">
+            <div class="board-summary">
+              <div id="difficulty-rating">Difficulty: --</div>
+              <div id="current-seed">Loading board...</div>
+            </div>
+            <div class="board-actions">
+              <button id="generate-btn" class="primary">New Board</button>
+              <button id="fullscreen-btn">Fullscreen</button>
+              <button id="board-reset-zoom-btn">Reset Zoom</button>
+              <button id="copy-seed-btn">Copy Seed</button>
+              <button id="copy-url-btn">Share URL</button>
+            </div>
+          </div>
+          <div id="board-container" class="board-container">
+            <p>Loading board...</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <button class="section-toggle" data-section-toggle="setup">
+            <span>Game Setup</span><span data-section-icon="setup">-</span>
+          </button>
+          <div id="section-setup" class="section-body">
+            <div class="setup-grid">
+              <div>
+                <label>Game Mode</label>
+                <div class="segmented">
+                  <button id="mode-34">3-4 Players</button>
+                  <button id="mode-2">2 Players</button>
+                </div>
+              </div>
+              <div id="variant-control" class="hidden">
+                <label for="variant-select">2-Player Variant</label>
+                <select id="variant-select">
+                  <option value="full-neutral">Full board + neutral settlements</option>
+                  <option value="full-open">Full board, no neutral settlements</option>
+                  <option value="full-tight">Full board + extra neutral pressure</option>
+                  <option value="compact-duel">Compact duel</option>
+                  <option value="compact-tight">Compact tight</option>
+                </select>
+              </div>
+            </div>
+            <div class="challenge-grid">
+              <label><input type="checkbox" id="challenge-scarce"> Scarce resources</label>
+              <label><input type="checkbox" id="challenge-harbors"> Harbor scramble</label>
+              <label><input type="checkbox" id="challenge-neutral"> Neutral pressure</label>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <button class="section-toggle" data-section-toggle="seed">
+            <span>Seed & Share</span><span data-section-icon="seed">-</span>
+          </button>
+          <div id="section-seed" class="section-body">
+            <label for="seed-input">Board Seed</label>
+            <div class="seed-row">
+              <input type="text" id="seed-input" placeholder="Enter a seed to load">
+              <button id="load-seed-btn">Load Seed</button>
+            </div>
+            <p class="muted">Saved history uses localStorage and stays in this browser.</p>
+          </div>
+        </section>
+
+        <section id="setup-instructions" class="panel hidden">
+          <button class="section-toggle" data-section-toggle="twoPlayer">
+            <span>2-Player Setup</span><span data-section-icon="twoPlayer">-</span>
+          </button>
+          <div id="section-twoPlayer" class="section-body">
+            <div id="setup-body"></div>
+          </div>
+        </section>
+
+        <section id="seed-history-panel" class="panel hidden">
+          <button class="section-toggle" data-section-toggle="history">
+            <span>Seed History</span><span data-section-icon="history">-</span>
+          </button>
+          <div id="section-history" class="section-body">
+            <div class="inline-actions">
+              <button id="share-history-btn">Copy All</button>
+              <button id="clear-history-btn" class="secondary">Clear</button>
+            </div>
+            <div id="seed-history" class="history-list"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <button class="section-toggle" data-section-toggle="stats">
+            <span>Board Statistics</span><span data-section-icon="stats">-</span>
+          </button>
+          <div id="section-stats" class="section-body">
+            <div id="stats" class="stats-grid"></div>
+            <div class="rules">
+              <p><strong>Balancing rules:</strong></p>
+              <ul>
+                <li>No adjacent 6s and 8s when the generator can avoid them</li>
+                <li>Even resource and pip distribution across the board</li>
+                <li>Resource diversity in hex neighborhoods</li>
+                <li>2-player variants include full and compact layouts</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>Version <a href="%RELEASE_URL%">%APP_VERSION%</a></span>
+        <span>Commit <a href="%COMMIT_URL%">%GIT_SHA%</a></span>
+      </footer>
+    </div>
+    <script type="module" src="./assets/app.js"></script>
+  </body>
+</html>

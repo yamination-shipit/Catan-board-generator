@@ -1,57 +1,82 @@
 # CLAUDE.md - Catan Board Generator
 
 ## Project Overview
-A single-file web application that generates balanced, shareable Catan board configurations. Supports 3-4 player standard games and a 2-player variant with neutral settlements. Deployed via GitHub Pages.
+
+A Deno/TypeScript static web application that generates balanced, shareable Catan board
+configurations. Supports 3-4 player standard games and 2-player variants with optional neutral
+settlements. Deployed via GitHub Pages from generated `dist/` output.
 
 ## Architecture
-- **Single-file app**: All HTML, CSS, and JavaScript lives in `index.html`
-- **No build process**: Open `index.html` directly in a browser to run
-- **No npm/node dependencies**: Uses Tailwind CSS via CDN
-- **SVG rendering**: Board is drawn as inline SVG with zoom/pan support
+
+- **TypeScript app**: Source lives under `src/` and is bundled with Deno.
+- **Pure domain core**: Board generation, scoring, options, URLs, history, and SVG helpers are pure
+  where practical.
+- **Browser boundary**: DOM, localStorage, clipboard, fullscreen, and history mutations live in
+  `src/main.ts`.
+- **No production dependencies**: Uses Deno tooling and checked-in CSS.
+- **SVG rendering**: Board is drawn as inline SVG with zoom/pan support.
 
 ## Key Concepts
-- **Seeded RNG**: Linear congruential generator ensures reproducible boards from a seed string
-- **Board balancing**: Generates up to 100 candidate boards and picks the highest-scoring one
-- **Scoring criteria**: Penalizes adjacent 6/8 tiles, rewards even pip distribution and resource diversity
-- **Hex grid**: Offset coordinate system (even/odd row offsets) with 19-hex standard Catan layout
-- **Ports**: 9 harbors around the board edge (4 generic 3:1, 5 specialty 2:1) rendered as labeled circles outside the hex grid
-- **Zoom/Pan**: Mouse wheel zoom, click-drag pan, pinch-zoom on mobile, plus button controls
+
+- **Seeded RNG**: Pure linear congruential generator ensures reproducible boards from a seed string.
+- **Board balancing**: Generates up to 100 candidate boards and picks the highest-scoring one.
+- **Scoring criteria**: Penalizes adjacent 6/8 tiles, rewards even pip distribution and resource
+  diversity.
+- **Hex grid**: Row/col display positions plus axial q/r coordinates.
+- **Ports**: Harbors are rendered outside the board edge and can be seed-shuffled by challenge mode.
+- **Version metadata**: Footer links the displayed semver and git hash to GitHub releases and
+  commits.
 
 ## File Structure
-```
-index.html                      # Complete application (HTML + CSS + JS)
+
+```text
+src/                            # TypeScript source
+src/domain/                     # Pure board domain logic
+src/rendering/                  # Pure SVG/geometry helpers
+src/app/                        # Immutable app state transitions
+scripts/                        # Deno build/setup/serve scripts
+tests/                          # Behavior-driven Deno tests
+docs/adr/                       # Core architecture decision records
+index.html                      # Source fallback that points to dist after build
 README.md                       # Project documentation
 CLAUDE.md                       # This file - development guide
-.gitignore                      # Git ignore rules
-.github/workflows/static.yml    # GitHub Pages deployment workflow
+.github/workflows/              # CI, Pages deploy, PR title, Release Please
 ```
 
 ## Development Commands
-```bash
-# Run locally - just open in browser
-open index.html          # macOS
-xdg-open index.html      # Linux
 
-# No tests, linting, or build steps exist
+```bash
+just setup               # Verify local tooling
+just check               # Format check, lint, and type-check
+just test                # Run behavior tests
+just build               # Generate dist/
+just ci                  # Run the same validation path as PR CI
+just serve               # Build and serve dist/ on localhost:8080
 ```
 
-## Code Layout (inside index.html)
-- **Lines 1-70**: HTML structure, Tailwind CSS styles, zoom/pan CSS
-- **Lines 140-230**: `SeededRandom` class, resource/number constants, board layout definitions, port definitions
-- **Lines 230-310**: Event listeners, mode switching, URL loading, `generateBoard()`
-- **Lines 310-420**: Board generation algorithm (`generateBalancedBoard`, `generateRandomBoard`, `evaluateBoard`)
-- **Lines 420-600**: Rendering (`renderBoard`, `renderPorts`, `initZoom`, `renderHex`)
-- **Lines 600+**: Stats, clipboard, notifications, hash utility
+## Testing
+
+- Tests use Roy Osherove-style behavior names and Arrange/Act/Assert comments.
+- Tests are intended to document core behavior, not every UI class.
+- Snapshot-style checks are limited to stable board summaries and SVG shape.
 
 ## Conventions
-- Vanilla JavaScript only (no frameworks, no TypeScript)
-- Tailwind CSS utility classes for styling
-- All state is global (`currentMode`, `currentSeed`, `currentBoard`)
-- SVG elements use string concatenation (no DOM API)
-- Hex positions use row/col offset coordinates, not axial/cube
+
+- Prefer pure functions, immutable data, and narrow interfaces.
+- Push mutations to browser boundaries.
+- Use DDD names only where they clarify the model; prefer simple data transformations when in
+  conflict.
+- Avoid dependencies unless a concrete need justifies them.
+- Keep generated workflow docs concise.
+- Do not make a landing page; this repo is a direct-use app.
 
 ## Workflow
+
 - Always commit and push when done with a task, unless explicitly instructed otherwise.
+- For non-trivial work, create and maintain a `.plans/` file.
+- Run `just ci` before completing implementation work.
 
 ## Deployment
-Pushes to `master` trigger the GitHub Actions workflow (`.github/workflows/static.yml`) which deploys to GitHub Pages automatically.
+
+Pushes to `master` trigger CI, Release Please, and GitHub Pages deployment. Pages deploy builds and
+uploads `dist/`.

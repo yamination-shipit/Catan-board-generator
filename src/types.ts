@@ -1,0 +1,89 @@
+export type Resource = "wood" | "brick" | "sheep" | "wheat" | "ore" | "desert";
+export type Mode = "3-4" | "2";
+export type LayoutKey = Mode | "compact";
+export type Challenge = "scarce" | "harbors" | "neutral";
+export type Variant =
+  | "full-neutral"
+  | "full-open"
+  | "full-tight"
+  | "compact-duel"
+  | "compact-tight";
+
+export interface ResourceDefinition {
+  readonly name: string;
+  readonly color: string;
+  readonly shortLabel: string;
+}
+
+export interface HexLayout {
+  readonly row: number;
+  readonly col: number;
+  readonly q: number;
+  readonly r: number;
+}
+
+export interface Hex extends HexLayout {
+  readonly resource: Resource;
+  readonly number: number | null;
+}
+
+export interface GhostSettlement {
+  readonly hexRow: number;
+  readonly hexCol: number;
+  readonly vertex: number;
+}
+
+export interface Port {
+  readonly type: Resource | "3:1";
+  readonly hexRow: number;
+  readonly hexCol: number;
+  readonly vertices: readonly [number, number];
+  readonly label: "2:1" | "3:1";
+  readonly shortLabel: string;
+}
+
+export interface GenerationSelection {
+  readonly mode: Mode;
+  readonly variant: Variant;
+  readonly challenges: readonly Challenge[];
+}
+
+export interface GenerationOptions {
+  readonly layoutKey: LayoutKey;
+  readonly compact: boolean;
+  readonly variant: Variant;
+  readonly challenges: readonly Challenge[];
+  readonly scarceResource: Resource | null;
+}
+
+export interface DifficultyRating {
+  readonly level: 1 | 2 | 3 | 4 | 5;
+  readonly label: "Easy" | "Standard" | "Tricky" | "Hard" | "Brutal";
+  readonly score: number;
+}
+
+export interface BoardView {
+  readonly seed: string;
+  readonly selection: GenerationSelection;
+  readonly options: GenerationOptions;
+  readonly board: readonly Hex[];
+  readonly ports: readonly Port[];
+  readonly difficulty: DifficultyRating;
+}
+
+export interface SeedHistoryEntry {
+  readonly seed: string;
+  readonly mode: Mode;
+  readonly variant: Variant;
+  readonly challenges: readonly Challenge[];
+  readonly difficulty: DifficultyRating | null;
+  readonly createdAt: string;
+}
+
+export interface VersionInfo {
+  readonly version: string;
+  readonly gitSha: string;
+  readonly gitFullSha: string;
+  readonly releaseUrl: string;
+  readonly commitUrl: string;
+}

@@ -24,13 +24,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
+
+      - name: Validate
+        run: just ci
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: "dist"
 
       - name: Deploy to GitHub Pages
         id: deployment
