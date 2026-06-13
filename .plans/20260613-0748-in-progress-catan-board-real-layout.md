@@ -20,6 +20,8 @@ Render generated boards like a physical Catan island while adding Codex workflow
 
 - `git status --short --branch` works after Termux safe-directory setup.
 - `quick_validate.py .codex/skills/catan-workflow` attempted; blocked by missing `PyYAML` in this environment, so the skill structure was manually inspected.
+- `node --check` passed for the inline JavaScript extracted from `index.html`.
+- Node runtime smoke confirmed rows `3-4-5-4-3`, 19 land tiles, 9 ports, 18 water-ring tiles, and 6 center neighbors.
 - Generate 3-4 player and 2-player boards in browser.
 - Confirm the island shape is 3-4-5-4-3, ports sit around the coast, neutral settlements remain visible, and touch zoom/pan still works.
 - Confirm seeded URL loading still regenerates a board.

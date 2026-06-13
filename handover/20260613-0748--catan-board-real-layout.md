@@ -8,8 +8,9 @@ Branch: `codex/catan-board-real-layout`
 - Termux Git safe-directory entries were added for both Android path aliases for this repo.
 - The first plan commit was created before implementation work.
 - The repo-local Codex skill was created; automatic validation is blocked until `PyYAML` is available for the skill validator.
-- Workflow setup, board rendering, Android preview, and final push are still in progress.
+- Board geometry now uses axial 3-4-5-4-3 rendering with a radius-3 water ring.
+- Android preview and final push are still in progress.
 
 ## Next Action
 
-Finish the Codex workflow skill and implement the real Catan board geometry in `index.html`.
+Preview `index.html` on Android, then finish global Termux Git workflow documentation and push completed branches.

@@ -233,14 +233,13 @@
             2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 8: 5, 9: 4, 10: 3, 11: 2, 12: 1
         };
 
-        // Board layouts (positions for hexes)
+        // Board layout: radius-2 axial island rendered as 3-4-5-4-3 rows
         const STANDARD_LAYOUT = [
-            // 19 hexes in standard Catan layout
-            { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 },
-            { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 },
-            { row: 2, col: 0 }, { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }, { row: 2, col: 4 },
-            { row: 3, col: 0 }, { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 3, col: 3 },
-            { row: 4, col: 0 }, { row: 4, col: 1 }, { row: 4, col: 2 }
+            { row: 0, col: 0, q: 0, r: -2 }, { row: 0, col: 1, q: 1, r: -2 }, { row: 0, col: 2, q: 2, r: -2 },
+            { row: 1, col: 0, q: -1, r: -1 }, { row: 1, col: 1, q: 0, r: -1 }, { row: 1, col: 2, q: 1, r: -1 }, { row: 1, col: 3, q: 2, r: -1 },
+            { row: 2, col: 0, q: -2, r: 0 }, { row: 2, col: 1, q: -1, r: 0 }, { row: 2, col: 2, q: 0, r: 0 }, { row: 2, col: 3, q: 1, r: 0 }, { row: 2, col: 4, q: 2, r: 0 },
+            { row: 3, col: 0, q: -2, r: 1 }, { row: 3, col: 1, q: -1, r: 1 }, { row: 3, col: 2, q: 0, r: 1 }, { row: 3, col: 3, q: 1, r: 1 },
+            { row: 4, col: 0, q: -2, r: 2 }, { row: 4, col: 1, q: -1, r: 2 }, { row: 4, col: 2, q: 0, r: 2 }
         ];
 
         const LAYOUTS = {
@@ -251,12 +250,12 @@
         // Ghost settlement positions for 2-player mode
         // These are vertex coordinates (intersection points between hexes)
         const GHOST_SETTLEMENTS = [
-            { hexRow: 0, hexCol: 0, vertex: 0 },  // Top of top-left hex
-            { hexRow: 0, hexCol: 2, vertex: 1 },  // Top-right of top-right hex
-            { hexRow: 2, hexCol: 0, vertex: 4 },  // Bottom-left of middle-left hex
-            { hexRow: 2, hexCol: 4, vertex: 2 },  // Bottom-right of middle-right hex
-            { hexRow: 4, hexCol: 0, vertex: 3 },  // Bottom of bottom-left hex
-            { hexRow: 4, hexCol: 2, vertex: 4 },  // Bottom of bottom-right hex
+            { hexRow: 0, hexCol: 0, vertex: 5 },  // Upper-left coast
+            { hexRow: 0, hexCol: 2, vertex: 1 },  // Upper-right coast
+            { hexRow: 2, hexCol: 0, vertex: 4 },  // Left coast
+            { hexRow: 2, hexCol: 4, vertex: 2 },  // Right coast
+            { hexRow: 4, hexCol: 0, vertex: 4 },  // Lower-left coast
+            { hexRow: 4, hexCol: 2, vertex: 2 },  // Lower-right coast
             { hexRow: 1, hexCol: 1, vertex: 0 },  // Strategic interior position
             { hexRow: 3, hexCol: 2, vertex: 3 }   // Strategic interior position
         ];
@@ -269,14 +268,14 @@
         // angle: rotation angle in degrees for the port indicator pointing inward
         const PORTS = [
             { type: '3:1', hexRow: 0, hexCol: 0, vertices: [5, 0], label: '3:1', emoji: '?' },
-            { type: 'wheat', hexRow: 0, hexCol: 1, vertices: [0, 1], label: '2:1', emoji: '🌾' },
+            { type: 'wheat', hexRow: 0, hexCol: 1, vertices: [5, 0], label: '2:1', emoji: '🌾' },
             { type: 'ore', hexRow: 0, hexCol: 2, vertices: [1, 2], label: '2:1', emoji: '⛰️' },
-            { type: '3:1', hexRow: 1, hexCol: 0, vertices: [4, 5], label: '3:1', emoji: '?' },
             { type: 'sheep', hexRow: 1, hexCol: 3, vertices: [1, 2], label: '2:1', emoji: '🐑' },
-            { type: '3:1', hexRow: 2, hexCol: 0, vertices: [3, 4], label: '3:1', emoji: '?' },
             { type: '3:1', hexRow: 2, hexCol: 4, vertices: [1, 2], label: '3:1', emoji: '?' },
-            { type: 'brick', hexRow: 3, hexCol: 0, vertices: [3, 4], label: '2:1', emoji: '🧱' },
-            { type: 'wood', hexRow: 3, hexCol: 3, vertices: [2, 3], label: '2:1', emoji: '🌲' },
+            { type: 'brick', hexRow: 3, hexCol: 3, vertices: [2, 3], label: '2:1', emoji: '🧱' },
+            { type: 'wood', hexRow: 4, hexCol: 2, vertices: [2, 3], label: '2:1', emoji: '🌲' },
+            { type: '3:1', hexRow: 4, hexCol: 0, vertices: [3, 4], label: '3:1', emoji: '?' },
+            { type: '3:1', hexRow: 2, hexCol: 0, vertices: [4, 5], label: '3:1', emoji: '?' },
         ];
 
         // Resource distribution (same for both modes - standard Catan)
@@ -484,31 +483,35 @@
         }
 
         function getNeighbors(hex, board) {
-            const { row, col } = hex;
-            const offsets = row % 2 === 0
-                ? [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]]
-                : [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]];
+            const { q, r } = hex;
+            const offsets = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 
             return offsets
-                .map(([dr, dc]) => board.find(h => h.row === row + dr && h.col === col + dc))
+                .map(([dq, dr]) => board.find(h => h.q === q + dq && h.r === r + dr))
                 .filter(h => h !== undefined);
         }
 
         function renderBoard(board, mode) {
             const hexSize = 60;
-            const hexWidth = hexSize * 2;
-            const hexHeight = hexSize * Math.sqrt(3);
+            const hexWidth = hexSize * Math.sqrt(3);
+            const hexHeight = hexSize * 2;
 
             const container = document.getElementById('board-container');
 
-            // Calculate SVG dimensions with padding for ports
-            const maxRow = Math.max(...board.map(h => h.row));
-            const maxCol = Math.max(...board.map(h => h.col));
-            const portPad = 55;
-            const innerWidth = (maxCol + 1) * hexWidth * 0.75 + hexWidth * 0.25;
-            const innerHeight = (maxRow + 1) * hexHeight + hexHeight * 0.5;
-            const svgWidth = innerWidth + portPad * 2;
-            const svgHeight = innerHeight + portPad * 2;
+            const waterHexPositions = generateHexRing(3);
+            const allPositions = [
+                ...board.map(h => axialToPixel(h.q, h.r, hexSize)),
+                ...waterHexPositions.map(h => axialToPixel(h.q, h.r, hexSize))
+            ];
+            const minX = Math.min(...allPositions.map(p => p.x));
+            const maxX = Math.max(...allPositions.map(p => p.x));
+            const minY = Math.min(...allPositions.map(p => p.y));
+            const maxY = Math.max(...allPositions.map(p => p.y));
+            const portPad = 80;
+            const svgWidth = Math.ceil((maxX - minX) + hexWidth + portPad * 2);
+            const svgHeight = Math.ceil((maxY - minY) + hexHeight + portPad * 2);
+            const offsetX = portPad + hexWidth / 2 - minX;
+            const offsetY = portPad + hexSize - minY;
 
             let svg = `<svg id="board-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}" style="max-width:100%;height:auto;">`;
 
@@ -528,56 +531,46 @@
             svg += `<rect x="0" y="0" width="${svgWidth}" height="${svgHeight}" fill="url(#wave-pattern)" rx="12"/>`;
 
             // Helper to compute hex center with port padding offset
-            function hexCenter(row, col) {
+            function hexCenter(hexOrRow, maybeCol) {
+                const hex = typeof hexOrRow === 'object'
+                    ? hexOrRow
+                    : board.find(h => h.row === hexOrRow && h.col === maybeCol);
+                const raw = axialToPixel(hex.q, hex.r, hexSize);
                 return {
-                    x: col * hexWidth * 0.75 + hexWidth / 2 + portPad,
-                    y: row * hexHeight + (row % 2 === 0 ? 0 : hexHeight / 2) + hexHeight / 2 + portPad
+                    x: raw.x + offsetX,
+                    y: raw.y + offsetY
                 };
             }
 
             // Render the water hex ring (border hexes surrounding the land)
-            const waterHexPositions = [
-                // Top row (above row 0)
-                { row: -1, col: -1 }, { row: -1, col: 0 }, { row: -1, col: 1 }, { row: -1, col: 2 },
-                // Right side
-                { row: 0, col: 3 }, { row: 1, col: 4 }, { row: 2, col: 5 },
-                { row: 3, col: 4 }, { row: 4, col: 3 },
-                // Bottom row
-                { row: 5, col: -1 }, { row: 5, col: 0 }, { row: 5, col: 1 }, { row: 5, col: 2 },
-                // Left side
-                { row: 4, col: -1 }, { row: 3, col: -1 }, { row: 2, col: -1 },
-                { row: 1, col: -1 }, { row: 0, col: -1 }
-            ];
-
             for (const wh of waterHexPositions) {
-                const { x: wx, y: wy } = hexCenter(wh.row, wh.col);
-                // Only draw if position is within SVG bounds
-                if (wx > -hexSize && wx < svgWidth + hexSize && wy > -hexSize && wy < svgHeight + hexSize) {
-                    const pts = [];
-                    for (let i = 0; i < 6; i++) {
-                        const angle = Math.PI / 3 * i;
-                        pts.push(`${wx + hexSize * Math.cos(angle)},${wy + hexSize * Math.sin(angle)}`);
-                    }
-                    svg += `<polygon points="${pts.join(' ')}" fill="#3B7DD8" stroke="#2A5A9E" stroke-width="1.5" opacity="0.5"/>`;
-                    svg += `<text x="${wx}" y="${wy}" text-anchor="middle" font-size="20" dominant-baseline="middle" opacity="0.4">🌊</text>`;
+                const raw = axialToPixel(wh.q, wh.r, hexSize);
+                const wx = raw.x + offsetX;
+                const wy = raw.y + offsetY;
+                const pts = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.PI / 3 * i - Math.PI / 2;
+                    pts.push(`${wx + hexSize * Math.cos(angle)},${wy + hexSize * Math.sin(angle)}`);
                 }
+                svg += `<polygon points="${pts.join(' ')}" fill="#3B7DD8" stroke="#2A5A9E" stroke-width="1.5" opacity="0.5"/>`;
+                svg += `<text x="${wx}" y="${wy}" text-anchor="middle" font-size="20" dominant-baseline="middle" opacity="0.4">🌊</text>`;
             }
 
             // Render land hexes
             for (const hex of board) {
-                const { x, y } = hexCenter(hex.row, hex.col);
+                const { x, y } = hexCenter(hex);
                 svg += renderHex(x, y, hexSize, hex);
             }
 
             // Render ports with labels
-            svg += renderPorts(board, hexSize, hexWidth, hexHeight, hexCenter);
+            svg += renderPorts(board, hexSize, hexCenter);
 
             // Render ghost settlements for 2-player mode
             if (mode === '2') {
                 for (const ghost of GHOST_SETTLEMENTS) {
                     const hex = board.find(h => h.row === ghost.hexRow && h.col === ghost.hexCol);
                     if (hex) {
-                        const { x: hexX, y: hexY } = hexCenter(ghost.hexRow, ghost.hexCol);
+                        const { x: hexX, y: hexY } = hexCenter(hex);
                         const vertexPos = getVertexPosition(hexX, hexY, hexSize, ghost.vertex);
 
                         svg += `<circle cx="${vertexPos.x}" cy="${vertexPos.y}" r="8" fill="#666" stroke="#fff" stroke-width="2" opacity="0.8"/>`;
@@ -609,13 +602,33 @@
             updateSetupInstructions(mode);
         }
 
-        function renderPorts(board, hexSize, hexWidth, hexHeight, hexCenter) {
+        function axialToPixel(q, r, size) {
+            return {
+                x: size * Math.sqrt(3) * (q + r / 2),
+                y: size * 1.5 * r
+            };
+        }
+
+        function generateHexRing(radius) {
+            const positions = [];
+            for (let q = -radius; q <= radius; q++) {
+                for (let r = -radius; r <= radius; r++) {
+                    const s = -q - r;
+                    if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) === radius) {
+                        positions.push({ q, r });
+                    }
+                }
+            }
+            return positions;
+        }
+
+        function renderPorts(board, hexSize, hexCenter) {
             let svg = '';
             for (const port of PORTS) {
                 const hex = board.find(h => h.row === port.hexRow && h.col === port.hexCol);
                 if (!hex) continue;
 
-                const { x: hx, y: hy } = hexCenter(port.hexRow, port.hexCol);
+                const { x: hx, y: hy } = hexCenter(hex);
                 const v1 = getVertexPosition(hx, hy, hexSize, port.vertices[0]);
                 const v2 = getVertexPosition(hx, hy, hexSize, port.vertices[1]);
 
@@ -825,7 +838,7 @@
         function renderHex(x, y, size, hex) {
             const points = [];
             for (let i = 0; i < 6; i++) {
-                const angle = Math.PI / 3 * i;
+                const angle = Math.PI / 3 * i - Math.PI / 2;
                 const px = x + size * Math.cos(angle);
                 const py = y + size * Math.sin(angle);
                 points.push(`${px},${py}`);
