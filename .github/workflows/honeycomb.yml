@@ -1,0 +1,30 @@
+name: Honeycomb
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-behavior:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install Just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
+
+      - name: Install Chromium
+        run: deno run -A npm:playwright@1.52.0 install --with-deps chromium
+
+      - name: Run honeycomb tests
+        run: just test-honeycomb

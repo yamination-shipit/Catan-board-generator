@@ -14,11 +14,11 @@ import type { GenerationSelection, Hex, SeedHistoryEntry } from "../src/types.ts
 
 Deno.test("generateBoard_WhenGivenTheSameSeed_ReturnsTheSameBoard", () => {
   // Arrange
-  const selection: GenerationSelection = { mode: "3-4", variant: "full-neutral", challenges: [] };
+  const choice = selection();
 
   // Act
-  const first = createBoardView("repeatable-seed", selection);
-  const second = createBoardView("repeatable-seed", selection);
+  const first = createBoardView("repeatable-seed", choice);
+  const second = createBoardView("repeatable-seed", choice);
 
   // Assert
   assert.deepEqual(first.board, second.board);
@@ -28,10 +28,10 @@ Deno.test("generateBoard_WhenGivenTheSameSeed_ReturnsTheSameBoard", () => {
 
 Deno.test("generateBoard_WhenUsingStandardLayout_UsesCatanResourceAndNumberCounts", () => {
   // Arrange
-  const selection: GenerationSelection = { mode: "3-4", variant: "full-neutral", challenges: [] };
+  const choice = selection();
 
   // Act
-  const view = createBoardView("distribution-seed", selection);
+  const view = createBoardView("distribution-seed", choice);
   const resources = countBy(view.board.map((hex) => hex.resource));
   const numbers = view.board.flatMap((hex) => hex.number === null ? [] : [hex.number]);
 
@@ -44,11 +44,7 @@ Deno.test("generateBoard_WhenUsingStandardLayout_UsesCatanResourceAndNumberCount
 
 Deno.test("getNeighbors_WhenGivenCenterHex_ReturnsSixAdjacentHexes", () => {
   // Arrange
-  const view = createBoardView("neighbor-seed", {
-    mode: "3-4",
-    variant: "full-neutral",
-    challenges: [],
-  });
+  const view = createBoardView("neighbor-seed", selection());
   const center = view.board.find((hex) => hex.q === 0 && hex.r === 0);
   assert.ok(center);
 
@@ -73,6 +69,8 @@ Deno.test("evaluateBoard_WhenHighNumbersTouch_ReducesTheScore", () => {
     mode: "3-4",
     variant: "full-neutral",
     challenges: [],
+    expansions: [],
+    rulePreset: "balanced-neutral",
   });
   const separatedBoard = baseBoard.map((hex) =>
     hex.q === 1 && hex.r === 0 ? { ...hex, number: 4 } : hex
@@ -89,11 +87,7 @@ Deno.test("evaluateBoard_WhenHighNumbersTouch_ReducesTheScore", () => {
 
 Deno.test("calculatePipBalance_WhenPipsAreUneven_ReturnsPositivePressure", () => {
   // Arrange
-  const view = createBoardView("pip-seed", {
-    mode: "3-4",
-    variant: "full-neutral",
-    challenges: [],
-  });
+  const view = createBoardView("pip-seed", selection());
 
   // Act
   const balance = calculatePipBalance(view.board);
@@ -121,6 +115,8 @@ Deno.test("getPortsForOptions_WhenHarborsChallengeIsEnabled_ShufflesDeterministi
     mode: "2",
     variant: "compact-tight",
     challenges: ["harbors"],
+    expansions: [],
+    rulePreset: "balanced-neutral",
   });
 
   // Act
@@ -138,19 +134,44 @@ Deno.test("createShareUrl_WhenChallengesAreEmpty_RemovesChallengeParameter", () 
     "https://example.test/?seed=old&mode=2&variant=compact-tight&challenges=scarce";
 
   // Act
-  const url = createShareUrl(currentUrl, "fresh", {
-    mode: "3-4",
-    variant: "full-neutral",
-    challenges: [],
-  });
+  const url = createShareUrl(
+    currentUrl,
+    "fresh",
+    selection({
+      mode: "3-4",
+      variant: "full-neutral",
+      challenges: [],
+    }),
+  );
 
   // Assert
   assert.equal(url, "https://example.test/?seed=fresh&mode=3-4");
 });
 
+Deno.test("createShareUrl_WhenExpansionsAreSelected_PreservesThemOutsideTheSeed", () => {
+  // Arrange
+  const currentUrl = "https://example.test/?seed=old";
+
+  // Act
+  const url = createShareUrl(currentUrl, "fresh", {
+    mode: "2",
+    variant: "compact-tight",
+    challenges: [],
+    expansions: ["seafarers", "cities-knights"],
+    rulePreset: "long-game",
+  });
+
+  // Assert
+  assert.equal(
+    url,
+    "https://example.test/?seed=fresh&mode=2&variant=compact-tight&expansions=seafarers%2Ccities-knights&rules=long-game",
+  );
+});
+
 Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults", () => {
   // Arrange
-  const search = "?seed=abc&mode=bogus&variant=unknown&challenges=scarce,bad,neutral";
+  const search =
+    "?seed=abc&mode=bogus&variant=unknown&challenges=scarce,bad,neutral&expansions=seafarers,bad,seafarers&rules=unknown";
 
   // Act
   const parsed = parseShareSearch(search);
@@ -158,7 +179,13 @@ Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults
   // Assert
   assert.deepEqual(parsed, {
     seed: "abc",
-    selection: { mode: "3-4", variant: "full-neutral", challenges: ["scarce", "neutral"] },
+    selection: {
+      mode: "3-4",
+      variant: "full-neutral",
+      challenges: ["scarce", "neutral"],
+      expansions: ["seafarers"],
+      rulePreset: "balanced-neutral",
+    },
   });
 });
 
@@ -180,11 +207,7 @@ Deno.test("upsertSeedHistory_WhenDuplicateBoardChoiceIsSaved_MovesItToTheFront",
 
 Deno.test("summarizeBoard_WhenUsingKnownSeed_MatchesDocumentationSnapshot", () => {
   // Arrange
-  const view = createBoardView("docs-seed", {
-    mode: "3-4",
-    variant: "full-neutral",
-    challenges: [],
-  });
+  const view = createBoardView("docs-seed", selection());
 
   // Act
   const summary = summarizeBoard(view.board);
@@ -216,11 +239,14 @@ Deno.test("summarizeBoard_WhenUsingKnownSeed_MatchesDocumentationSnapshot", () =
 
 Deno.test("renderBoardSvg_WhenUsingCompactChallengeSeed_MatchesStableSnapshotShape", () => {
   // Arrange
-  const view = createBoardView("docs-seed", {
-    mode: "2",
-    variant: "compact-tight",
-    challenges: ["scarce", "harbors", "neutral"],
-  });
+  const view = createBoardView(
+    "docs-seed",
+    selection({
+      mode: "2",
+      variant: "compact-tight",
+      challenges: ["scarce", "harbors", "neutral"],
+    }),
+  );
 
   // Act
   const svg = renderBoardSvg({
@@ -228,6 +254,7 @@ Deno.test("renderBoardSvg_WhenUsingCompactChallengeSeed_MatchesStableSnapshotSha
     mode: view.selection.mode,
     variant: view.selection.variant,
     challenges: view.selection.challenges,
+    rulePreset: view.selection.rulePreset,
     ports: view.ports,
   });
 
@@ -247,9 +274,27 @@ Deno.test("renderBoardSvg_WhenUsingCompactChallengeSeed_MatchesStableSnapshotSha
     "3:1:wood:10",
     "3:2:ore:6",
   ]);
-  assert.equal(svg.length, 21310);
+  assert.ok(svg.includes('class="neutral-road"'));
   assert.ok(svg.startsWith('<svg id="board-svg" viewBox="0 0 856 788"'));
   assert.ok(svg.includes(">N</text>"));
+});
+
+Deno.test("summarizeBoard_WhenExpansionsAreMetadataOnly_PreservesHistoricalSeedBoard", () => {
+  // Arrange
+  const base = createBoardView("docs-seed", selection());
+
+  // Act
+  const expanded = createBoardView(
+    "docs-seed",
+    selection({
+      expansions: ["five-six-players", "seafarers", "cities-knights"],
+    }),
+  );
+
+  // Assert
+  assert.deepEqual(summarizeBoard(expanded.board), summarizeBoard(base.board));
+  assert.deepEqual(expanded.ports, base.ports);
+  assert.deepEqual(expanded.difficulty, base.difficulty);
 });
 
 function countBy(values: readonly string[]): Record<string, number> {
@@ -261,6 +306,17 @@ function countBy(values: readonly string[]): Record<string, number> {
       }), {}),
     ).sort(([left], [right]) => left.localeCompare(right)),
   );
+}
+
+function selection(overrides: Partial<GenerationSelection> = {}): GenerationSelection {
+  return {
+    mode: "3-4",
+    variant: "full-neutral",
+    challenges: [],
+    expansions: [],
+    rulePreset: "balanced-neutral",
+    ...overrides,
+  };
 }
 
 function historyEntry(

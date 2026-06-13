@@ -27,11 +27,12 @@ The generator uses intelligent algorithms to create balanced boards:
 - Copy seed or full URL to clipboard
 - Save seed history locally in browser localStorage
 - Copy/export all saved history entries with share URLs and metadata
+- Toggle future expansion choices in share URLs without changing historical seed output
 
 ### Mobile Layout
 
 - Board loads automatically on first page load
-- Compact board-first layout keeps the board near the top on mobile
+- Compact board-first layout keeps the whole board visible by default on mobile
 - Collapsible setup, sharing, history, and statistics sections
 - Fullscreen board mode with quick actions
 - Light/dark theme toggle saved locally
@@ -46,15 +47,23 @@ The 2-player mode supports multiple table setups:
 - **Compact duel**: 13-hex island with reduced numbers and ports
 - **Compact tight**: compact island with neutral blockers
 
+2-player rules can be selected separately from the board variant:
+
+- **Balanced neutral setup**: neutral settlements and neutral road markers where the board shows
+  them
+- **Open duel**: normal starting placement with no neutral roads
+- **Long game**: neutral markers with a 12-point victory target
+
 **Setup Instructions:**
 
 1. **Board**: Use the selected full or compact board shown in the app
 2. **Neutral Settlements**: Place neutral/ghost settlements only when the selected variant marks
    gray "N" circles on vertices
-3. **Starting Placement**: Each player places 2 settlements and 2 roads after neutral settlements
+3. **Neutral Roads**: Place neutral roads where the selected rules preset draws them
+4. **Starting Placement**: Each player places 2 settlements and 2 roads after neutral settlements
    are placed
-4. **Gameplay**: Neutral settlements block building but don't collect resources
-5. **Victory**: First to 10 points wins
+5. **Gameplay**: Neutral settlements block building but don't collect resources
+6. **Victory**: Use the selected rules preset target
 
 **Why Neutral Settlements?**
 
@@ -76,10 +85,18 @@ just setup
 just ci
 just build
 just serve
+just test-honeycomb
 ```
 
 The source app lives in `src/`. `just build` generates the static site in `dist/`, and `just serve`
 serves it at `http://127.0.0.1:8080`.
+
+`just test-honeycomb` runs the longer browser behavior suite and is also available as a manual
+GitHub Actions workflow. Local runs require a Playwright Chromium install:
+
+```bash
+deno run -A npm:playwright@1.52.0 install chromium
+```
 
 ## Deployment
 
@@ -109,7 +126,7 @@ on every push to `master`.
 - `src/rendering/`: pure geometry and SVG helpers
 - `src/app/`: immutable app state transitions
 - `src/main.ts`: browser boundary for DOM, storage, clipboard, fullscreen, and URL effects
-- `docs/adr/`: core architectural decisions
+- `docs/adr/`: core architectural decisions, including seed compatibility rules
 
 ## Board Generation Algorithm
 

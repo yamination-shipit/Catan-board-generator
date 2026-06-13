@@ -2,7 +2,9 @@ import type { GenerationSelection } from "../types.ts";
 import {
   defaultSelection,
   normalizeChallenges,
+  normalizeExpansions,
   normalizeMode,
+  normalizeRulePreset,
   normalizeVariant,
 } from "./options.ts";
 
@@ -12,12 +14,15 @@ export function parseShareSearch(search: string): {
 } {
   const params = new URLSearchParams(search);
   const rawChallenges = params.get("challenges")?.split(",") ?? [];
+  const rawExpansions = params.get("expansions")?.split(",") ?? [];
   return {
     seed: params.get("seed"),
     selection: {
       mode: normalizeMode(params.get("mode")),
       variant: normalizeVariant(params.get("variant")),
       challenges: normalizeChallenges(rawChallenges),
+      expansions: normalizeExpansions(rawExpansions),
+      rulePreset: normalizeRulePreset(params.get("rules")),
     },
   };
 }
@@ -41,6 +46,18 @@ export function createShareUrl(
     url.searchParams.set("challenges", selection.challenges.join(","));
   } else {
     url.searchParams.delete("challenges");
+  }
+
+  if (selection.expansions.length > 0) {
+    url.searchParams.set("expansions", selection.expansions.join(","));
+  } else {
+    url.searchParams.delete("expansions");
+  }
+
+  if (selection.mode === "2" && selection.rulePreset !== defaultSelection.rulePreset) {
+    url.searchParams.set("rules", selection.rulePreset);
+  } else {
+    url.searchParams.delete("rules");
   }
 
   return url.toString();

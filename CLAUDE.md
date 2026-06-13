@@ -26,6 +26,8 @@ settlements. Deployed via GitHub Pages from generated `dist/` output.
 - **Ports**: Harbors are rendered outside the board edge and can be seed-shuffled by challenge mode.
 - **Version metadata**: Footer links the displayed semver and git hash to GitHub releases and
   commits.
+- **ADRs**: Durable technical decisions live in `docs/adr/` and should be consulted before changing
+  seed compatibility, board generation, URL contracts, tests, tooling, or release behavior.
 
 ## File Structure
 
@@ -74,6 +76,8 @@ just serve               # Build and serve dist/ on localhost:8080
 
 - Always commit and push when done with a task, unless explicitly instructed otherwise.
 - For non-trivial work, create and maintain a `.plans/` file.
+- For non-trivial design or compatibility changes, read relevant `docs/adr/` records and add a new
+  ADR when the decision should guide future work.
 - Run `just ci` before completing implementation work.
 
 ## Deployment

@@ -1,11 +1,13 @@
 import type {
   Challenge,
+  Expansion,
   GenerationOptions,
   GenerationSelection,
   GhostSettlement,
   Mode,
   Port,
   Resource,
+  RulePreset,
   Variant,
 } from "../types.ts";
 import {
@@ -27,6 +29,8 @@ export const defaultSelection: GenerationSelection = {
   mode: "3-4",
   variant: "full-neutral",
   challenges: [],
+  expansions: [],
+  rulePreset: "balanced-neutral",
 };
 
 export function normalizeMode(value: string | null): Mode {
@@ -46,7 +50,17 @@ export function normalizeVariant(value: string | null): Variant {
 
 export function normalizeChallenges(values: readonly string[]): readonly Challenge[] {
   const valid: readonly Challenge[] = ["scarce", "harbors", "neutral"];
-  return values.filter((value): value is Challenge => valid.includes(value as Challenge));
+  return uniqueKnown(values, valid);
+}
+
+export function normalizeExpansions(values: readonly string[]): readonly Expansion[] {
+  const valid: readonly Expansion[] = ["five-six-players", "seafarers", "cities-knights"];
+  return uniqueKnown(values, valid);
+}
+
+export function normalizeRulePreset(value: string | null): RulePreset {
+  const presets: readonly RulePreset[] = ["balanced-neutral", "open-duel", "long-game"];
+  return presets.includes(value as RulePreset) ? value as RulePreset : "balanced-neutral";
 }
 
 export function getGenerationOptions(
@@ -65,6 +79,8 @@ export function getGenerationOptions(
     compact: layoutKey === "compact",
     variant: selection.variant,
     challenges: [...selection.challenges],
+    expansions: [...selection.expansions],
+    rulePreset: selection.rulePreset,
     scarceResource,
   };
 }
@@ -112,4 +128,11 @@ function chooseScarceResource(seed: string): Resource {
     resourceKeys.length - 1,
   );
   return resourceKeys[result.value] as Resource;
+}
+
+function uniqueKnown<T extends string>(
+  values: readonly string[],
+  valid: readonly T[],
+): readonly T[] {
+  return [...new Set(values)].filter((value): value is T => valid.includes(value as T));
 }

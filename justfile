@@ -11,6 +11,9 @@ check:
 test:
     {{deno}} task test
 
+test-honeycomb:
+    {{deno}} task test:honeycomb
+
 build:
     {{deno}} task build
 

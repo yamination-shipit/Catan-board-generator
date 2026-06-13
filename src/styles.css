@@ -194,14 +194,15 @@ a {
   align-items: center;
   display: flex;
   justify-content: center;
-  min-height: 58vh;
+  min-height: min(62vh, 48rem);
 }
 
 .zoom-wrapper {
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: grab;
-  max-height: 70vh;
+  height: min(68vh, 48rem);
+  min-height: 22rem;
   overflow: hidden;
   position: relative;
   touch-action: none;
@@ -229,7 +230,12 @@ a {
 #board-svg {
   display: block;
   height: auto;
-  max-width: 100%;
+  max-width: none;
+}
+
+#zoom-content {
+  width: max-content;
+  will-change: transform;
 }
 
 .section-toggle {
@@ -265,6 +271,7 @@ a {
 }
 
 .challenge-grid,
+.expansion-grid,
 .stats-grid {
   display: grid;
   gap: 0.6rem;
@@ -272,7 +279,8 @@ a {
   margin-top: 1rem;
 }
 
-.challenge-grid label {
+.challenge-grid label,
+.expansion-grid label {
   background: var(--panel-soft);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -280,7 +288,8 @@ a {
   padding: 0.8rem;
 }
 
-.challenge-grid input {
+.challenge-grid input,
+.expansion-grid input {
   min-height: 0;
   width: auto;
 }
@@ -365,6 +374,11 @@ a {
 }
 
 @media (max-width: 640px) {
+  .zoom-wrapper {
+    height: 62vh;
+    min-height: 20rem;
+  }
+
   .zoom-controls {
     flex-direction: row;
   }

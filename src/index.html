@@ -62,11 +62,25 @@
                   <option value="compact-tight">Compact tight</option>
                 </select>
               </div>
+              <div id="rules-control" class="hidden">
+                <label for="rule-preset-select">2-Player Rules</label>
+                <select id="rule-preset-select">
+                  <option value="balanced-neutral">Balanced neutral setup</option>
+                  <option value="open-duel">Open duel</option>
+                  <option value="long-game">Long game</option>
+                </select>
+              </div>
             </div>
             <div class="challenge-grid">
               <label><input type="checkbox" id="challenge-scarce"> Scarce resources</label>
               <label><input type="checkbox" id="challenge-harbors"> Harbor scramble</label>
               <label><input type="checkbox" id="challenge-neutral"> Neutral pressure</label>
+            </div>
+            <div class="expansion-grid">
+              <label><input type="checkbox" id="expansion-five-six-players"> 5-6 player
+                extension</label>
+              <label><input type="checkbox" id="expansion-seafarers"> Seafarers</label>
+              <label><input type="checkbox" id="expansion-cities-knights"> Cities & Knights</label>
             </div>
           </div>
         </section>

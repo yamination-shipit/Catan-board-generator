@@ -1,6 +1,6 @@
-import type { Challenge, Hex, Mode, Port, Variant } from "../types.ts";
+import type { Challenge, Hex, Mode, Port, RulePreset, Variant } from "../types.ts";
 import { getGhostSettlements } from "../domain/options.ts";
-import { RESOURCES } from "../domain/rules.ts";
+import { RESOURCES, RULE_PRESETS } from "../domain/rules.ts";
 import { pipsForNumber } from "../domain/board.ts";
 import { axialToPixel, generateHexRing, getVertexPosition, type Point } from "./geometry.ts";
 
@@ -9,6 +9,7 @@ export function renderBoardSvg(input: {
   readonly mode: Mode;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
+  readonly rulePreset: RulePreset;
   readonly ports: readonly Port[];
 }): string {
   const hexSize = 60;
@@ -48,6 +49,7 @@ export function renderBoardSvg(input: {
       input.mode,
       input.variant,
       input.challenges,
+      input.rulePreset,
     )
     : "";
 
@@ -161,7 +163,9 @@ function renderGhostSettlements(
   mode: Mode,
   variant: Variant,
   challenges: readonly Challenge[],
+  rulePreset: RulePreset,
 ): string {
+  const showRoads = RULE_PRESETS[rulePreset].neutralRoads;
   return getGhostSettlements(mode, variant, challenges).map((ghost) => {
     const hex = board.find((candidate) =>
       candidate.row === ghost.hexRow && candidate.col === ghost.hexCol
@@ -169,7 +173,12 @@ function renderGhostSettlements(
     if (!hex) return "";
     const center = hexCenter(hex);
     const vertex = getVertexPosition(center.x, center.y, hexSize, ghost.vertex);
-    return `<circle cx="${vertex.x}" cy="${vertex.y}" r="8" fill="#4b5563" stroke="#ffffff" stroke-width="2" opacity="0.86"/>
+    const roadEnd = getVertexPosition(center.x, center.y, hexSize, (ghost.vertex + 1) % 6);
+    const road = showRoads
+      ? `<line class="neutral-road" x1="${vertex.x}" y1="${vertex.y}" x2="${roadEnd.x}" y2="${roadEnd.y}" stroke="#374151" stroke-width="8" stroke-linecap="round" opacity="0.76"/>
+<line class="neutral-road-highlight" x1="${vertex.x}" y1="${vertex.y}" x2="${roadEnd.x}" y2="${roadEnd.y}" stroke="#f9fafb" stroke-width="2" stroke-linecap="round" opacity="0.72"/>`
+      : "";
+    return `${road}<circle cx="${vertex.x}" cy="${vertex.y}" r="8" fill="#4b5563" stroke="#ffffff" stroke-width="2" opacity="0.86"/>
 <text x="${vertex.x}" y="${vertex.y}" text-anchor="middle" font-size="10" fill="#ffffff" dominant-baseline="middle" font-weight="700">N</text>`;
   }).join("");
 }

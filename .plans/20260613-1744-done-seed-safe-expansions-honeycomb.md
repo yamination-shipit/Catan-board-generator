@@ -2,7 +2,7 @@
 
 ## Status
 
-Planned.
+Done.
 
 ## Goal
 
@@ -20,8 +20,9 @@ historical seed output.
 
 ## Validation
 
-- Pending: `just check`
-- Pending: `just test`
-- Pending: `just build`
-- Pending: honeycomb test attempt
-- Pending: `just ci`
+- Passed: `just check`
+- Passed: `just test`
+- Passed: `just build`
+- Attempted: `just test-honeycomb`; Playwright launched but local Chromium is not installed in this
+  environment. The manual Honeycomb workflow installs Chromium before running the suite.
+- Passed: `just ci`

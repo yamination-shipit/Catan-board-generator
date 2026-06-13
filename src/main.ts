@@ -1,12 +1,28 @@
 import type { AppState } from "./app/app-state.ts";
-import { initialState, withBoard, withChallenges, withMode, withVariant } from "./app/app-state.ts";
+import {
+  initialState,
+  withBoard,
+  withChallenges,
+  withExpansions,
+  withMode,
+  withRulePreset,
+  withVariant,
+} from "./app/app-state.ts";
 import { createRandomSeed } from "./app/seed.ts";
-import { CHALLENGE_NAMES, RESOURCES, VARIANT_DESCRIPTIONS, VARIANT_NAMES } from "./domain/rules.ts";
+import {
+  CHALLENGE_NAMES,
+  EXPANSION_NAMES,
+  RESOURCES,
+  RULE_PRESET_NAMES,
+  RULE_PRESETS,
+  VARIANT_DESCRIPTIONS,
+  VARIANT_NAMES,
+} from "./domain/rules.ts";
 import { getGhostSettlements } from "./domain/options.ts";
 import { createShareUrl, parseShareSearch } from "./domain/share-url.ts";
 import { upsertSeedHistory } from "./domain/history.ts";
 import { renderBoardSvg } from "./rendering/svg.ts";
-import type { Challenge, Mode, SeedHistoryEntry, Variant } from "./types.ts";
+import type { Challenge, Expansion, Mode, RulePreset, SeedHistoryEntry, Variant } from "./types.ts";
 
 const HISTORY_KEY = "catan-board-seed-history";
 const PANEL_STATE_KEY = "catan-board-panel-state";
@@ -48,11 +64,15 @@ function bindEvents(): void {
   byId("fullscreen-btn").addEventListener("click", toggleFullscreen);
   byId("board-reset-zoom-btn").addEventListener("click", resetZoom);
   byId("theme-toggle-btn").addEventListener("click", toggleTheme);
-  byId("collapse-all-btn").addEventListener("click", collapseAllSections);
+  byId("collapse-all-btn").addEventListener("click", toggleAllSections);
   byId("share-history-btn").addEventListener("click", copySeedHistory);
   byId("clear-history-btn").addEventListener("click", clearSeedHistory);
   byId("variant-select").addEventListener("change", () => {
     state = withVariant(state, selectValue("variant-select") as Variant);
+    refreshCurrentBoard();
+  });
+  byId("rule-preset-select").addEventListener("change", () => {
+    state = withRulePreset(state, selectValue("rule-preset-select") as RulePreset);
     refreshCurrentBoard();
   });
   ["challenge-scarce", "challenge-harbors", "challenge-neutral"].forEach((id) => {
@@ -61,6 +81,14 @@ function bindEvents(): void {
       refreshCurrentBoard();
     });
   });
+  ["expansion-five-six-players", "expansion-seafarers", "expansion-cities-knights"].forEach(
+    (id) => {
+      byId(id).addEventListener("change", () => {
+        state = withExpansions(state, readExpansions());
+        refreshCurrentBoard();
+      });
+    },
+  );
   document.querySelectorAll<HTMLElement>("[data-section-toggle]").forEach((button) => {
     button.addEventListener("click", () => toggleSection(button.dataset.sectionToggle ?? ""));
   });
@@ -109,6 +137,8 @@ function generateBoard(seed: string, saveHistory: boolean): void {
       mode: view.selection.mode,
       variant: view.selection.variant,
       challenges: view.selection.challenges,
+      expansions: view.selection.expansions,
+      rulePreset: view.selection.rulePreset,
       difficulty: view.difficulty,
       createdAt: new Date().toISOString(),
     });
@@ -133,6 +163,7 @@ function renderBoard(view = state.boardView): void {
       mode: view.selection.mode,
       variant: view.selection.variant,
       challenges: view.selection.challenges,
+      rulePreset: view.selection.rulePreset,
       ports: view.ports,
     })
   }
@@ -176,6 +207,16 @@ function renderCurrentSeed(): void {
       }`,
     );
   }
+  if (view.selection.expansions.length) {
+    parts.push(
+      `Expansions: ${
+        view.selection.expansions.map((expansion) => EXPANSION_NAMES[expansion]).join(", ")
+      }`,
+    );
+  }
+  if (view.selection.mode === "2") {
+    parts.push(`Rules: ${RULE_PRESET_NAMES[view.selection.rulePreset]}`);
+  }
   if (view.options.scarceResource) {
     parts.push(`Scarce: ${RESOURCES[view.options.scarceResource].name}`);
   }
@@ -191,15 +232,20 @@ function renderSetupInstructions(): void {
   }
   panel.classList.remove("hidden");
   const variant = view.selection.variant;
+  const preset = RULE_PRESETS[view.selection.rulePreset];
   const challenges = view.selection.challenges.map((challenge) => CHALLENGE_NAMES[challenge]);
   const neutralCount = getGhostSettlements(
     view.selection.mode,
     view.selection.variant,
     view.selection.challenges,
   ).length;
+  const neutralRoadText = neutralCount > 0 && preset.neutralRoads
+    ? "Place the neutral road markers connected to those neutral settlements."
+    : "No neutral roads are used for this rules preset.";
   byId("setup-body").innerHTML = `
     <p><strong>${VARIANT_NAMES[variant]}</strong></p>
     <p>${VARIANT_DESCRIPTIONS[variant]}</p>
+    <p><strong>${RULE_PRESET_NAMES[view.selection.rulePreset]}</strong>: ${preset.summary}</p>
     <ol>
       <li>Use the ${
     variant.startsWith("compact") ? "13-hex compact board" : "19-hex full board"
@@ -209,13 +255,16 @@ function renderSetupInstructions(): void {
       ? "No neutral settlements are used."
       : "Place the neutral settlements marked with N on the board vertices."
   }</li>
-      <li>Each player starts with 2 settlements and 2 roads.</li>
-      <li>First to 10 victory points wins unless your table agrees otherwise.</li>
+      <li>${neutralRoadText}</li>
+      <li>Each player starts with ${preset.startingSettlements} settlements and ${preset.startingRoads} roads.</li>
+      <li>First to ${preset.victoryPoints} victory points wins.</li>
     </ol>
     ${
     challenges.length ? `<p><strong>Active challenges:</strong> ${challenges.join(", ")}</p>` : ""
   }
-    <p class="muted">Rendered setup markers: ${neutralCount}</p>
+    <p class="muted">Rendered setup markers: ${neutralCount} neutral settlements${
+    neutralCount > 0 && preset.neutralRoads ? ` and ${neutralCount} neutral roads` : ""
+  }</p>
   `;
 }
 
@@ -227,6 +276,12 @@ function renderSeedHistory(): void {
     const challengeText = entry.challenges.length
       ? ` | ${entry.challenges.map((challenge) => CHALLENGE_NAMES[challenge]).join(", ")}`
       : "";
+    const expansionText = entry.expansions?.length
+      ? ` | ${entry.expansions.map((expansion) => EXPANSION_NAMES[expansion]).join(", ")}`
+      : "";
+    const ruleText = entry.mode === "2"
+      ? ` | ${RULE_PRESET_NAMES[entry.rulePreset ?? "balanced-neutral"]}`
+      : "";
     const difficultyText = entry.difficulty
       ? ` | Difficulty ${entry.difficulty.level}/5 ${entry.difficulty.label}`
       : "";
@@ -234,7 +289,7 @@ function renderSeedHistory(): void {
       <span>${entry.seed}</span>
       <small>${entry.mode === "2" ? "2 Players" : "3-4 Players"} | ${
       VARIANT_NAMES[entry.variant]
-    }${challengeText}${difficultyText}</small>
+    }${ruleText}${challengeText}${expansionText}${difficultyText}</small>
     </button>`;
   }).join("");
   list.querySelectorAll<HTMLElement>("[data-history-index]").forEach((button) => {
@@ -249,6 +304,8 @@ function restoreSeedHistory(index: number): void {
     mode: entry.mode,
     variant: entry.variant,
     challenges: entry.challenges,
+    expansions: entry.expansions ?? [],
+    rulePreset: entry.rulePreset ?? "balanced-neutral",
   });
   syncControlsFromState();
   generateBoard(entry.seed, true);
@@ -273,12 +330,27 @@ function copySeedHistory(): void {
       `${index + 1}. ${entry.seed}`,
       `Mode: ${entry.mode === "2" ? "2 Players" : "3-4 Players"}`,
       `Variant: ${VARIANT_NAMES[entry.variant]}`,
+      `Rules: ${
+        entry.mode === "2" ? RULE_PRESET_NAMES[entry.rulePreset ?? "balanced-neutral"] : "Standard"
+      }`,
       `Challenges: ${
         entry.challenges.map((challenge) => CHALLENGE_NAMES[challenge]).join(", ") || "None"
       }`,
+      `Expansions: ${
+        (entry.expansions ?? []).map((expansion) => EXPANSION_NAMES[expansion]).join(", ") ||
+        "None"
+      }`,
       difficulty,
       `Saved: ${entry.createdAt}`,
-      `URL: ${createShareUrl(globalThis.location.href, entry.seed, entry)}`,
+      `URL: ${
+        createShareUrl(globalThis.location.href, entry.seed, {
+          mode: entry.mode,
+          variant: entry.variant,
+          challenges: entry.challenges,
+          expansions: entry.expansions ?? [],
+          rulePreset: entry.rulePreset ?? "balanced-neutral",
+        })
+      }`,
     ].join("\n");
   });
   copyText(`Catan seed history\n\n${lines.join("\n\n")}`, "Seed history copied.");
@@ -311,10 +383,15 @@ function syncControlsFromState(): void {
   byId("mode-34").classList.toggle("is-selected", mode === "3-4");
   byId("mode-2").classList.toggle("is-selected", mode === "2");
   byId("variant-control").classList.toggle("hidden", mode !== "2");
+  byId("rules-control").classList.toggle("hidden", mode !== "2");
   setSelectValue("variant-select", state.selection.variant);
+  setSelectValue("rule-preset-select", state.selection.rulePreset);
   setChecked("challenge-scarce", state.selection.challenges.includes("scarce"));
   setChecked("challenge-harbors", state.selection.challenges.includes("harbors"));
   setChecked("challenge-neutral", state.selection.challenges.includes("neutral"));
+  setChecked("expansion-five-six-players", state.selection.expansions.includes("five-six-players"));
+  setChecked("expansion-seafarers", state.selection.expansions.includes("seafarers"));
+  setChecked("expansion-cities-knights", state.selection.expansions.includes("cities-knights"));
   renderSetupInstructions();
 }
 
@@ -326,6 +403,14 @@ function readChallenges(): readonly Challenge[] {
   ].filter((challenge): challenge is Challenge => challenge !== null);
 }
 
+function readExpansions(): readonly Expansion[] {
+  return [
+    isChecked("expansion-five-six-players") ? "five-six-players" : null,
+    isChecked("expansion-seafarers") ? "seafarers" : null,
+    isChecked("expansion-cities-knights") ? "cities-knights" : null,
+  ].filter((expansion): expansion is Expansion => expansion !== null);
+}
+
 function toggleSection(sectionId: string): void {
   collapsedSections = {
     ...collapsedSections,
@@ -335,11 +420,14 @@ function toggleSection(sectionId: string): void {
   renderPanelState();
 }
 
-function collapseAllSections(): void {
-  collapsedSections = Object.fromEntries(sections.map((section) => [section, true]));
+function toggleAllSections(): void {
+  const shouldExpand = sections.every((section) => collapsedSections[section]);
+  collapsedSections = Object.fromEntries(sections.map((section) => [section, !shouldExpand]));
   saveJson(PANEL_STATE_KEY, collapsedSections);
   renderPanelState();
-  showNotification("All sections except the board are collapsed.");
+  showNotification(
+    shouldExpand ? "All sections expanded." : "All sections except the board are collapsed.",
+  );
 }
 
 function renderPanelState(): void {
@@ -351,6 +439,9 @@ function renderPanelState(): void {
     const icon = document.querySelector(`[data-section-icon="${section}"]`);
     if (icon) icon.textContent = collapsedSections[section] ? "+" : "-";
   });
+  byId("collapse-all-btn").textContent = sections.every((section) => collapsedSections[section])
+    ? "Expand"
+    : "Collapse";
 }
 
 function applyStoredTheme(): void {
@@ -392,11 +483,13 @@ function updateFullscreenButton(): void {
 
 let zoomState = { scale: 1, panX: 0, panY: 0 };
 let applyZoom = (): void => {};
+let zoomAbortController: AbortController | null = null;
 
 function initZoom(): void {
+  zoomAbortController?.abort();
+  zoomAbortController = new AbortController();
   const wrapper = byId("zoom-wrapper");
   const content = byId("zoom-content");
-  zoomState = { scale: 1, panX: 0, panY: 0 };
   applyZoom = () => {
     content.style.transform =
       `translate(${zoomState.panX}px, ${zoomState.panY}px) scale(${zoomState.scale})`;
@@ -408,7 +501,7 @@ function initZoom(): void {
   let startY = 0;
   const setScale = (nextScale: number, cx: number, cy: number) => {
     const previous = zoomState.scale;
-    const scale = Math.min(4, Math.max(0.5, nextScale));
+    const scale = Math.min(4, Math.max(0.2, nextScale));
     zoomState = {
       scale,
       panX: cx - (cx - zoomState.panX) * (scale / previous),
@@ -425,36 +518,52 @@ function initZoom(): void {
       event.clientX - rect.left,
       event.clientY - rect.top,
     );
-  }, { passive: false });
+  }, { passive: false, signal: zoomAbortController.signal });
 
   wrapper.addEventListener("mousedown", (event) => {
     if (event.button !== 0) return;
     isPanning = true;
     startX = event.clientX - zoomState.panX;
     startY = event.clientY - zoomState.panY;
-  });
+  }, { signal: zoomAbortController.signal });
   globalThis.addEventListener("mousemove", (event) => {
     if (!isPanning) return;
     zoomState = { ...zoomState, panX: event.clientX - startX, panY: event.clientY - startY };
     applyZoom();
-  });
+  }, { signal: zoomAbortController.signal });
   globalThis.addEventListener("mouseup", () => {
     isPanning = false;
-  });
+  }, { signal: zoomAbortController.signal });
 
   byId("zoom-in-btn").addEventListener("click", () => {
     const rect = wrapper.getBoundingClientRect();
     setScale(zoomState.scale * 1.3, rect.width / 2, rect.height / 2);
-  });
+  }, { signal: zoomAbortController.signal });
   byId("zoom-out-btn").addEventListener("click", () => {
     const rect = wrapper.getBoundingClientRect();
     setScale(zoomState.scale / 1.3, rect.width / 2, rect.height / 2);
+  }, { signal: zoomAbortController.signal });
+  byId("zoom-reset-btn").addEventListener("click", resetZoom, {
+    signal: zoomAbortController.signal,
   });
-  byId("zoom-reset-btn").addEventListener("click", resetZoom);
+  globalThis.addEventListener("resize", resetZoom, { signal: zoomAbortController.signal });
+  resetZoom();
 }
 
 function resetZoom(): void {
-  zoomState = { scale: 1, panX: 0, panY: 0 };
+  const wrapper = byId("zoom-wrapper");
+  const svg = byId("board-svg") as unknown as SVGSVGElement;
+  const viewBox = svg.viewBox.baseVal;
+  const boardWidth = viewBox.width || Number(svg.getAttribute("width")) || 1;
+  const boardHeight = viewBox.height || Number(svg.getAttribute("height")) || 1;
+  const rect = wrapper.getBoundingClientRect();
+  const fitScale = Math.min(rect.width / boardWidth, rect.height / boardHeight, 1) * 0.96;
+  const scale = Math.max(0.2, fitScale);
+  zoomState = {
+    scale,
+    panX: Math.max(0, (rect.width - boardWidth * scale) / 2),
+    panY: Math.max(0, (rect.height - boardHeight * scale) / 2),
+  };
   applyZoom();
 }
 

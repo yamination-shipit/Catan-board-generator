@@ -21,6 +21,8 @@ export function createBoardView(seed: string, selection: GenerationSelection): B
       mode: selection.mode,
       variant: selection.variant,
       challenges: [...selection.challenges],
+      expansions: [...selection.expansions],
+      rulePreset: selection.rulePreset,
     },
     options,
     board,
