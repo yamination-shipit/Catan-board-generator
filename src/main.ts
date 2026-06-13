@@ -272,7 +272,8 @@ function renderSeedHistory(): void {
   const panel = byId("seed-history-panel");
   const list = byId("seed-history");
   panel.classList.toggle("hidden", seedHistory.length === 0);
-  list.innerHTML = seedHistory.map((entry, index) => {
+  list.replaceChildren();
+  seedHistory.forEach((entry, index) => {
     const challengeText = entry.challenges.length
       ? ` | ${entry.challenges.map((challenge) => CHALLENGE_NAMES[challenge]).join(", ")}`
       : "";
@@ -285,13 +286,22 @@ function renderSeedHistory(): void {
     const difficultyText = entry.difficulty
       ? ` | Difficulty ${entry.difficulty.level}/5 ${entry.difficulty.label}`
       : "";
-    return `<button class="history-item" data-history-index="${index}">
-      <span>${entry.seed}</span>
-      <small>${entry.mode === "2" ? "2 Players" : "3-4 Players"} | ${
+
+    const button = document.createElement("button");
+    button.className = "history-item";
+    button.dataset.historyIndex = String(index);
+
+    const seedSpan = document.createElement("span");
+    seedSpan.textContent = entry.seed;
+
+    const detail = document.createElement("small");
+    detail.textContent = `${entry.mode === "2" ? "2 Players" : "3-4 Players"} | ${
       VARIANT_NAMES[entry.variant]
-    }${ruleText}${challengeText}${expansionText}${difficultyText}</small>
-    </button>`;
-  }).join("");
+    }${ruleText}${challengeText}${expansionText}${difficultyText}`;
+
+    button.append(seedSpan, detail);
+    list.appendChild(button);
+  });
   list.querySelectorAll<HTMLElement>("[data-history-index]").forEach((button) => {
     button.addEventListener("click", () => restoreSeedHistory(Number(button.dataset.historyIndex)));
   });
