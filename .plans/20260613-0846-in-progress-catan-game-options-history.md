@@ -1,6 +1,6 @@
 # Catan Game Options And Seed History
 
-Status: planned
+Status: in-progress
 Branch: `codex/catan-game-options-history`
 
 ## Goal
@@ -9,6 +9,7 @@ Add richer board-generation controls while keeping the app single-file and direc
 
 ## Plan
 
+- Committed the initial plan before implementation edits.
 - Make the main Generate Board action create a new random seed and new board every click.
 - Keep manual/shared seed loading available through a separate Load Seed action.
 - Store generated/loaded seeds in local browser history with mode, variant, challenge, and timestamp.
@@ -19,8 +20,9 @@ Add richer board-generation controls while keeping the app single-file and direc
 
 ## Validation
 
-- `node --check` on extracted inline JavaScript.
-- Node/browser smoke for seed history state and generation behavior where feasible.
+- `node --check` passed for the inline JavaScript extracted from `index.html`.
+- Node smoke confirmed tight 2-player variant with all challenges produces 12 neutral markers, 9 ports, 19 board hexes, and seed history entries.
+- Local preview server responds at `http://127.0.0.1:8765/`.
 - Android browser preview before push.
 
 ## Completion
