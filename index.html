@@ -76,6 +76,10 @@
             font-family: sans-serif;
             pointer-events: none;
         }
+        .history-list {
+            max-height: 180px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="font-sans">
@@ -110,10 +114,42 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div id="variant-control" class="hidden">
+                    <label for="variant-select" class="block text-sm font-semibold text-gray-700 mb-2">2-Player Variant</label>
+                    <select id="variant-select" class="w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="full-neutral">Full board + neutral settlements</option>
+                        <option value="full-open">Full board, no neutral settlements</option>
+                        <option value="full-tight">Full board + extra neutral pressure</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Challenge Setup</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                        <label class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <input type="checkbox" id="challenge-scarce" class="rounded text-purple-600 focus:ring-purple-500">
+                            <span>Scarce resources</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <input type="checkbox" id="challenge-harbors" class="rounded text-purple-600 focus:ring-purple-500">
+                            <span>Harbor scramble</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                            <input type="checkbox" id="challenge-neutral" class="rounded text-purple-600 focus:ring-purple-500">
+                            <span>Neutral pressure</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="flex gap-2 flex-wrap">
                 <button id="generate-btn" class="flex-1 md:flex-none py-2 px-6 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-all shadow-md">
-                    🎲 Generate Board
+                    🎲 New Board
+                </button>
+                <button id="load-seed-btn" class="flex-1 md:flex-none py-2 px-6 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-all shadow-md">
+                    Load Seed
                 </button>
                 <button id="copy-seed-btn" class="flex-1 md:flex-none py-2 px-6 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md">
                     📋 Copy Seed
@@ -125,17 +161,26 @@
 
             <!-- Current Seed Display -->
             <div id="current-seed" class="mt-4 text-sm text-gray-600 font-mono bg-gray-50 p-3 rounded-lg"></div>
+
+            <div id="seed-history-panel" class="mt-4 hidden">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                    <h3 class="text-sm font-bold text-gray-800">Seed History</h3>
+                    <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-red-600">Clear</button>
+                </div>
+                <div id="seed-history" class="history-list grid gap-2 text-sm"></div>
+            </div>
         </div>
 
         <!-- 2-Player Setup Instructions -->
         <div id="setup-instructions" class="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-lg p-6 mb-6 hidden">
-            <h3 class="text-lg font-bold text-yellow-900 mb-3 flex items-center">
-                <span class="text-2xl mr-2">👥</span> 2-Player Setup Instructions
-            </h3>
-            <div class="space-y-3 text-sm text-yellow-900">
+            <button id="setup-toggle" class="w-full text-left text-lg font-bold text-yellow-900 flex items-center justify-between">
+                <span><span class="text-2xl mr-2">👥</span> 2-Player Setup Instructions</span>
+                <span id="setup-toggle-icon" class="text-xl">−</span>
+            </button>
+            <div id="setup-body" class="space-y-3 text-sm text-yellow-900 mt-3">
                 <p class="font-semibold">Neutral Settlements (marked with "N" on the board):</p>
                 <ol class="list-decimal list-inside space-y-2 ml-2">
-                    <li><strong>Place 8 neutral settlements</strong> at the positions marked with gray "N" circles on the board vertices</li>
+                    <li><strong>Place neutral settlements</strong> at the positions marked with gray "N" circles on the board vertices</li>
                     <li><strong>Each player starts with:</strong>
                         <ul class="list-disc list-inside ml-6 mt-1">
                             <li>2 settlements and 2 roads (place after neutral settlements)</li>
@@ -172,7 +217,7 @@
                     <li>✓ Even distribution of resources across the board</li>
                     <li>✓ Balanced pip counts (probability distribution)</li>
                     <li>✓ Resource diversity in hex neighborhoods</li>
-                    <li>✓ 2-Player mode uses full 19-hex board with 8 neutral settlements</li>
+                    <li>✓ 2-Player mode defaults to the full 19-hex board and supports multiple variants</li>
                     <li>✓ 9 harbors: 4 generic (3:1) + 5 specialty (2:1 each resource)</li>
                 </ul>
                 <p class="text-xs text-gray-600 mt-3"><strong>Ports Legend:</strong></p>
@@ -260,6 +305,34 @@
             { hexRow: 3, hexCol: 2, vertex: 3 }   // Strategic interior position
         ];
 
+        const EXTRA_GHOST_SETTLEMENTS = [
+            { hexRow: 1, hexCol: 0, vertex: 5 },
+            { hexRow: 1, hexCol: 3, vertex: 2 },
+            { hexRow: 3, hexCol: 0, vertex: 4 },
+            { hexRow: 3, hexCol: 3, vertex: 2 }
+        ];
+
+        const TWO_PLAYER_VARIANTS = {
+            'full-neutral': {
+                name: 'Full board + neutral settlements',
+                description: 'Use all 19 hexes and place 8 neutral settlements before player setup.'
+            },
+            'full-open': {
+                name: 'Full board, no neutral settlements',
+                description: 'Use all 19 hexes with standard starting placement and no neutral blockers.'
+            },
+            'full-tight': {
+                name: 'Full board + extra neutral pressure',
+                description: 'Use all 19 hexes and place 12 neutral settlements for a tighter map.'
+            }
+        };
+
+        const CHALLENGES = {
+            scarce: { name: 'Scarce resources' },
+            harbors: { name: 'Harbor scramble' },
+            neutral: { name: 'Neutral pressure' }
+        };
+
         // Standard Catan port definitions
         // Each port sits on an edge between two vertices of a coastal hex
         // type: '3:1' for generic, or resource name for 2:1 specialty ports
@@ -296,21 +369,41 @@
 
         // Global state
         let currentMode = '3-4';
+        let currentVariant = 'full-neutral';
+        let currentChallenges = [];
         let currentSeed = null;
         let currentBoard = null;
+        let currentPorts = PORTS;
+        let seedHistory = [];
+        let setupCollapsed = false;
+        const HISTORY_KEY = 'catan-board-seed-history';
+        const MAX_HISTORY = 12;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            seedHistory = loadSeedHistory();
             setupEventListeners();
             loadFromURL();
+            updateOptionVisibility();
+            renderSeedHistory();
         });
 
         function setupEventListeners() {
             document.getElementById('mode-34').addEventListener('click', () => switchMode('3-4'));
             document.getElementById('mode-2').addEventListener('click', () => switchMode('2'));
-            document.getElementById('generate-btn').addEventListener('click', generateBoard);
+            document.getElementById('generate-btn').addEventListener('click', generateNewBoard);
+            document.getElementById('load-seed-btn').addEventListener('click', loadSeedFromInput);
             document.getElementById('copy-seed-btn').addEventListener('click', copySeed);
             document.getElementById('copy-url-btn').addEventListener('click', copyURL);
+            document.getElementById('variant-select').addEventListener('change', () => {
+                currentVariant = document.getElementById('variant-select').value;
+                updateSetupInstructions(currentMode);
+            });
+            document.getElementById('challenge-scarce').addEventListener('change', syncChallengesFromControls);
+            document.getElementById('challenge-harbors').addEventListener('change', syncChallengesFromControls);
+            document.getElementById('challenge-neutral').addEventListener('change', syncChallengesFromControls);
+            document.getElementById('clear-history-btn').addEventListener('click', clearSeedHistory);
+            document.getElementById('setup-toggle').addEventListener('click', toggleSetupInstructions);
         }
 
         function switchMode(mode) {
@@ -321,55 +414,122 @@
             document.getElementById('mode-2').className = mode === '2'
                 ? 'flex-1 py-2 px-4 rounded-lg font-medium transition-all bg-purple-600 text-white shadow-md'
                 : 'flex-1 py-2 px-4 rounded-lg font-medium transition-all bg-gray-200 text-gray-700 hover:bg-gray-300';
+            updateOptionVisibility();
+            updateSetupInstructions(mode);
         }
 
         function loadFromURL() {
             const params = new URLSearchParams(window.location.search);
             const seed = params.get('seed');
             const mode = params.get('mode');
+            const variant = params.get('variant');
+            const challenges = params.get('challenges');
 
             if (mode && (mode === '3-4' || mode === '2')) {
                 switchMode(mode);
             }
 
+            if (variant && TWO_PLAYER_VARIANTS[variant]) {
+                currentVariant = variant;
+                document.getElementById('variant-select').value = variant;
+            }
+
+            if (challenges) {
+                currentChallenges = challenges.split(',').filter(challenge => CHALLENGES[challenge]);
+                syncChallengeControls();
+            }
+
             if (seed) {
                 document.getElementById('seed-input').value = seed;
-                generateBoard();
+                generateBoard(seed, { saveHistory: true });
             }
         }
 
-        function generateBoard() {
-            const seedInput = document.getElementById('seed-input').value.trim();
-            const seed = seedInput || Date.now();
+        function generateNewBoard() {
+            generateBoard(createRandomSeed(), { saveHistory: true });
+        }
+
+        function loadSeedFromInput() {
+            const seed = document.getElementById('seed-input').value.trim();
+            if (!seed) {
+                showNotification('Enter a seed to load, or use New Board.');
+                return;
+            }
+            generateBoard(seed, { saveHistory: true });
+        }
+
+        function generateBoard(seed, options = {}) {
             currentSeed = seed.toString();
+            document.getElementById('seed-input').value = currentSeed;
+            syncCurrentOptions();
 
             const rng = new SeededRandom(hashCode(currentSeed));
+            const generationOptions = getGenerationOptions(currentSeed);
 
             // Generate board with balancing
-            currentBoard = generateBalancedBoard(rng, currentMode);
+            currentBoard = generateBalancedBoard(rng, currentMode, generationOptions);
+            currentPorts = getPortsForOptions(currentSeed, generationOptions);
 
             // Render
             renderBoard(currentBoard, currentMode);
             renderStats(currentBoard);
 
             // Update seed display
-            document.getElementById('current-seed').textContent = `Current Seed: ${currentSeed}`;
+            renderCurrentSeed(generationOptions);
 
             // Update URL
-            const url = new URL(window.location);
-            url.searchParams.set('seed', currentSeed);
-            url.searchParams.set('mode', currentMode);
-            window.history.pushState({}, '', url);
+            updateURL();
+
+            if (options.saveHistory) {
+                addSeedHistory(currentSeed, generationOptions);
+            }
         }
 
-        function generateBalancedBoard(rng, mode) {
+        function createRandomSeed() {
+            const randomPart = Math.floor(Math.random() * 1e9).toString(36);
+            return `${Date.now().toString(36)}-${randomPart}`;
+        }
+
+        function syncCurrentOptions() {
+            currentVariant = document.getElementById('variant-select').value;
+            syncChallengesFromControls(false);
+        }
+
+        function syncChallengesFromControls(updateDisplay = true) {
+            const challenges = [];
+            if (document.getElementById('challenge-scarce').checked) challenges.push('scarce');
+            if (document.getElementById('challenge-harbors').checked) challenges.push('harbors');
+            if (document.getElementById('challenge-neutral').checked) challenges.push('neutral');
+            currentChallenges = challenges;
+            if (updateDisplay) updateSetupInstructions(currentMode);
+        }
+
+        function syncChallengeControls() {
+            document.getElementById('challenge-scarce').checked = currentChallenges.includes('scarce');
+            document.getElementById('challenge-harbors').checked = currentChallenges.includes('harbors');
+            document.getElementById('challenge-neutral').checked = currentChallenges.includes('neutral');
+        }
+
+        function getGenerationOptions(seed) {
+            const challengeRng = new SeededRandom(hashCode(`${seed}:challenges`));
+            const scarceResources = ['wood', 'brick', 'sheep', 'wheat', 'ore'];
+            return {
+                variant: currentVariant,
+                challenges: [...currentChallenges],
+                scarceResource: currentChallenges.includes('scarce')
+                    ? scarceResources[challengeRng.nextInt(0, scarceResources.length - 1)]
+                    : null
+            };
+        }
+
+        function generateBalancedBoard(rng, mode, options) {
             const maxAttempts = 100;
             let bestBoard = null;
             let bestScore = -Infinity;
 
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
                 const board = generateRandomBoard(rng, mode);
-                const score = evaluateBoard(board);
+                const score = evaluateBoard(board, options);
 
                 if (score > bestScore) {
                     bestScore = score;
@@ -417,7 +577,7 @@
             return board;
         }
 
-        function evaluateBoard(board) {
+        function evaluateBoard(board, options = {}) {
             let score = 1.0;
 
             // Penalty for adjacent 6s and 8s
@@ -432,7 +592,18 @@
             const diversityScore = calculateResourceDiversity(board);
             score += diversityScore * 0.1;
 
+            if (options.challenges && options.challenges.includes('scarce') && options.scarceResource) {
+                score += calculateScarcityChallengeScore(board, options.scarceResource) * 0.2;
+            }
+
             return score;
+        }
+
+        function calculateScarcityChallengeScore(board, resource) {
+            const resourceHexes = board.filter(hex => hex.resource === resource);
+            const resourcePips = resourceHexes.reduce((sum, hex) => sum + (NUMBERS[hex.number] || 0), 0);
+            const hasHighNumber = resourceHexes.some(hex => hex.number === 6 || hex.number === 8);
+            return (hasHighNumber ? -0.5 : 0.5) + Math.max(0, (11 - resourcePips) / 11);
         }
 
         function countAdjacentHighNumbers(board) {
@@ -563,11 +734,11 @@
             }
 
             // Render ports with labels
-            svg += renderPorts(board, hexSize, hexCenter);
+            svg += renderPorts(board, hexSize, hexCenter, currentPorts);
 
             // Render ghost settlements for 2-player mode
             if (mode === '2') {
-                for (const ghost of GHOST_SETTLEMENTS) {
+                for (const ghost of getGhostSettlements()) {
                     const hex = board.find(h => h.row === ghost.hexRow && h.col === ghost.hexCol);
                     if (hex) {
                         const { x: hexX, y: hexY } = hexCenter(hex);
@@ -622,9 +793,9 @@
             return positions;
         }
 
-        function renderPorts(board, hexSize, hexCenter) {
+        function renderPorts(board, hexSize, hexCenter, ports) {
             let svg = '';
-            for (const port of PORTS) {
+            for (const port of ports) {
                 const hex = board.find(h => h.row === port.hexRow && h.col === port.hexCol);
                 if (!hex) continue;
 
@@ -684,13 +855,200 @@
             };
         }
 
+        function getGhostSettlements() {
+            if (currentMode !== '2' || currentVariant === 'full-open') return [];
+            if (currentVariant === 'full-tight' || currentChallenges.includes('neutral')) {
+                return [...GHOST_SETTLEMENTS, ...EXTRA_GHOST_SETTLEMENTS];
+            }
+            return GHOST_SETTLEMENTS;
+        }
+
+        function getPortsForOptions(seed, options) {
+            if (!options.challenges.includes('harbors')) return PORTS;
+
+            const shuffledTypes = new SeededRandom(hashCode(`${seed}:ports`)).shuffle(PORTS.map(port => ({
+                type: port.type,
+                label: port.label,
+                emoji: port.emoji
+            })));
+
+            return PORTS.map((port, index) => ({
+                ...port,
+                ...shuffledTypes[index]
+            }));
+        }
+
         function updateSetupInstructions(mode) {
             const instructionsEl = document.getElementById('setup-instructions');
             if (mode === '2') {
                 instructionsEl.classList.remove('hidden');
+                renderSetupBody();
             } else {
                 instructionsEl.classList.add('hidden');
             }
+        }
+
+        function toggleSetupInstructions() {
+            setupCollapsed = !setupCollapsed;
+            renderSetupBody();
+        }
+
+        function renderSetupBody() {
+            const body = document.getElementById('setup-body');
+            const icon = document.getElementById('setup-toggle-icon');
+            if (!body || !icon) return;
+
+            body.classList.toggle('hidden', setupCollapsed);
+            icon.textContent = setupCollapsed ? '+' : '−';
+
+            const variant = TWO_PLAYER_VARIANTS[currentVariant];
+            const neutralCount = getGhostSettlements().length;
+            const challengeNames = currentChallenges.map(challenge => CHALLENGES[challenge].name);
+            const scarceText = currentChallenges.includes('scarce')
+                ? '<li><strong>Scarce resources:</strong> One resource is intentionally lower-value for this seed.</li>'
+                : '';
+            const harborText = currentChallenges.includes('harbors')
+                ? '<li><strong>Harbor scramble:</strong> Port types are seed-shuffled around the coast.</li>'
+                : '';
+            const neutralText = currentChallenges.includes('neutral') && currentVariant !== 'full-open'
+                ? '<li><strong>Neutral pressure:</strong> Extra neutral settlements tighten expansion routes.</li>'
+                : '';
+            const neutralSetup = neutralCount > 0
+                ? `<li><strong>Place ${neutralCount} neutral settlements</strong> at the positions marked with gray "N" circles on the board vertices.</li>`
+                : '<li><strong>No neutral settlements:</strong> Use normal 2-player setup on the full board.</li>';
+
+            body.innerHTML = `
+                <p class="font-semibold">${variant.name}</p>
+                <p>${variant.description}</p>
+                <ol class="list-decimal list-inside space-y-2 ml-2">
+                    ${neutralSetup}
+                    <li><strong>Each player starts with:</strong>
+                        <ul class="list-disc list-inside ml-6 mt-1">
+                            <li>2 settlements and 2 roads</li>
+                            <li>Standard starting resources from second settlement</li>
+                        </ul>
+                    </li>
+                    <li><strong>Victory Points:</strong> First to 10 points wins unless your table agrees otherwise.</li>
+                </ol>
+                ${challengeNames.length ? `
+                    <div class="mt-4 p-3 bg-yellow-100 rounded border border-yellow-300">
+                        <p class="font-semibold mb-1">Active Challenges</p>
+                        <ul class="list-disc list-inside text-xs space-y-1">
+                            ${scarceText}
+                            ${harborText}
+                            ${neutralText}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        function updateOptionVisibility() {
+            document.getElementById('variant-control').classList.toggle('hidden', currentMode !== '2');
+        }
+
+        function renderCurrentSeed(options) {
+            const parts = [`Current Seed: ${currentSeed}`, `Mode: ${currentMode === '2' ? '2 Players' : '3-4 Players'}`];
+            if (currentMode === '2') parts.push(`Variant: ${TWO_PLAYER_VARIANTS[currentVariant].name}`);
+            if (options.challenges.length) {
+                parts.push(`Challenges: ${options.challenges.map(challenge => CHALLENGES[challenge].name).join(', ')}`);
+            }
+            if (options.scarceResource) {
+                parts.push(`Scarce: ${RESOURCES[options.scarceResource].name}`);
+            }
+            document.getElementById('current-seed').textContent = parts.join(' | ');
+        }
+
+        function updateURL() {
+            const url = new URL(window.location);
+            url.searchParams.set('seed', currentSeed);
+            url.searchParams.set('mode', currentMode);
+            if (currentMode === '2') {
+                url.searchParams.set('variant', currentVariant);
+            } else {
+                url.searchParams.delete('variant');
+            }
+            if (currentChallenges.length) {
+                url.searchParams.set('challenges', currentChallenges.join(','));
+            } else {
+                url.searchParams.delete('challenges');
+            }
+            window.history.pushState({}, '', url);
+        }
+
+        function loadSeedHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveSeedHistory() {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(seedHistory));
+        }
+
+        function addSeedHistory(seed, options) {
+            const entry = {
+                seed,
+                mode: currentMode,
+                variant: currentVariant,
+                challenges: [...options.challenges],
+                createdAt: new Date().toISOString()
+            };
+            seedHistory = [
+                entry,
+                ...seedHistory.filter(item => !(
+                    item.seed === entry.seed &&
+                    item.mode === entry.mode &&
+                    item.variant === entry.variant &&
+                    (item.challenges || []).join(',') === entry.challenges.join(',')
+                ))
+            ].slice(0, MAX_HISTORY);
+            saveSeedHistory();
+            renderSeedHistory();
+        }
+
+        function renderSeedHistory() {
+            const panel = document.getElementById('seed-history-panel');
+            const list = document.getElementById('seed-history');
+            if (!panel || !list) return;
+
+            panel.classList.toggle('hidden', seedHistory.length === 0);
+            list.innerHTML = seedHistory.map((entry, index) => {
+                const challengeText = (entry.challenges || []).length
+                    ? ` • ${entry.challenges.map(challenge => CHALLENGES[challenge].name).join(', ')}`
+                    : '';
+                const variantText = entry.mode === '2' ? ` • ${TWO_PLAYER_VARIANTS[entry.variant || 'full-neutral'].name}` : '';
+                return `
+                    <button class="text-left bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-2" data-history-index="${index}">
+                        <span class="font-mono text-gray-800">${entry.seed}</span>
+                        <span class="block text-xs text-gray-500">${entry.mode === '2' ? '2 Players' : '3-4 Players'}${variantText}${challengeText}</span>
+                    </button>
+                `;
+            }).join('');
+
+            list.querySelectorAll('[data-history-index]').forEach(button => {
+                button.addEventListener('click', () => restoreSeedHistory(Number(button.dataset.historyIndex)));
+            });
+        }
+
+        function restoreSeedHistory(index) {
+            const entry = seedHistory[index];
+            if (!entry) return;
+
+            switchMode(entry.mode);
+            currentVariant = entry.variant || 'full-neutral';
+            document.getElementById('variant-select').value = currentVariant;
+            currentChallenges = (entry.challenges || []).filter(challenge => CHALLENGES[challenge]);
+            syncChallengeControls();
+            generateBoard(entry.seed, { saveHistory: true });
+        }
+
+        function clearSeedHistory() {
+            seedHistory = [];
+            saveSeedHistory();
+            renderSeedHistory();
         }
 
         function initZoom() {
@@ -896,14 +1254,32 @@
         }
 
         function copySeed() {
+            if (!currentSeed) {
+                showNotification('Generate or load a board first.');
+                return;
+            }
             navigator.clipboard.writeText(currentSeed);
             showNotification('Seed copied to clipboard!');
         }
 
         function copyURL() {
+            if (!currentSeed) {
+                showNotification('Generate or load a board first.');
+                return;
+            }
             const url = new URL(window.location);
             url.searchParams.set('seed', currentSeed);
             url.searchParams.set('mode', currentMode);
+            if (currentMode === '2') {
+                url.searchParams.set('variant', currentVariant);
+            } else {
+                url.searchParams.delete('variant');
+            }
+            if (currentChallenges.length) {
+                url.searchParams.set('challenges', currentChallenges.join(','));
+            } else {
+                url.searchParams.delete('challenges');
+            }
             navigator.clipboard.writeText(url.toString());
             showNotification('Share URL copied to clipboard!');
         }
