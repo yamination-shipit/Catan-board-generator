@@ -6,7 +6,7 @@ A professional, balanced Catan board generator with automatic GitHub Pages deplo
 
 ### Game Modes
 - **3-4 Players**: Standard 19-hex Catan board
-- **2 Players**: Full 19-hex board with 8 neutral settlements (ghost player variant)
+- **2 Players**: Full and compact variants with optional neutral settlements
 
 ### Board Balancing
 The generator uses intelligent algorithms to create balanced boards:
@@ -14,18 +14,34 @@ The generator uses intelligent algorithms to create balanced boards:
 - ✅ Even resource distribution across the board
 - ✅ Balanced pip counts (probability distribution)
 - ✅ Resource diversity in neighborhoods
+- ✅ Per-board difficulty rating from 1-5
 
 ### Seed System
 - Generate boards with seeds for reproducibility
 - Share specific boards with friends via URL
 - Copy seed or full URL to clipboard
+- Save seed history locally in browser localStorage
+- Copy/export all saved history entries with share URLs and metadata
+
+### Mobile Layout
+- Board loads automatically on first page load
+- Compact board-first layout keeps the board near the top on mobile
+- Collapsible setup, sharing, history, and statistics sections
+- Fullscreen board mode with quick actions
+- Light/dark theme toggle saved locally
 
 ### 2-Player Mode Setup
-The 2-player mode uses the full 19-hex board with neutral settlements:
+The 2-player mode supports multiple table setups:
+
+- **Full board + neutral settlements**: 19 hexes with 8 neutral blockers
+- **Full board, no neutral settlements**: 19 hexes with open expansion
+- **Full board + extra neutral pressure**: 19 hexes with 12 neutral blockers
+- **Compact duel**: 13-hex island with reduced numbers and ports
+- **Compact tight**: compact island with neutral blockers
 
 **Setup Instructions:**
-1. **Board**: Use the standard 19-hex board (same as 3-4 players)
-2. **Neutral Settlements**: Place 8 neutral/ghost settlements at the marked positions (shown as gray "N" circles on vertices)
+1. **Board**: Use the selected full or compact board shown in the app
+2. **Neutral Settlements**: Place neutral/ghost settlements only when the selected variant marks gray "N" circles on vertices
 3. **Starting Placement**: Each player places 2 settlements and 2 roads after neutral settlements are placed
 4. **Gameplay**: Neutral settlements block building but don't collect resources
 5. **Victory**: First to 10 points wins
