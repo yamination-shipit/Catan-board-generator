@@ -1,0 +1,4 @@
+interface:
+  display_name: "Catan Workflow"
+  short_description: "Plan-first Catan repo workflow"
+  default_prompt: "Use $catan-workflow before making Catan board generator changes."
