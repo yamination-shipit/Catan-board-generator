@@ -15,14 +15,16 @@ import {
   COMPACT_GHOST_SETTLEMENTS,
   COMPACT_PORTS,
   EXTRA_GHOST_SETTLEMENTS,
+  FIVE_SIX_PORTS,
   GHOST_SETTLEMENTS,
   PORTS,
   RESOURCES,
+  SEAFARERS_PORTS,
 } from "./rules.ts";
 import { createRandomState, hashSeed, nextInt, shuffle } from "./rng.ts";
 
 const resourceKeys = Object.keys(RESOURCES).filter((resource) =>
-  resource !== "desert"
+  !["desert", "gold", "sea"].includes(resource)
 ) as Resource[];
 
 export const defaultSelection: GenerationSelection = {
@@ -67,7 +69,11 @@ export function getGenerationOptions(
   seed: string,
   selection: GenerationSelection,
 ): GenerationOptions {
-  const layoutKey = selection.mode === "2" && selection.variant.startsWith("compact")
+  const layoutKey = selection.expansions.includes("seafarers")
+    ? "seafarers"
+    : selection.expansions.includes("five-six-players")
+    ? "5-6"
+    : selection.mode === "2" && selection.variant.startsWith("compact")
     ? "compact"
     : selection.mode;
   const scarceResource = selection.challenges.includes("scarce")
@@ -103,7 +109,7 @@ export function getGhostSettlements(
 }
 
 export function getPortsForOptions(seed: string, options: GenerationOptions): readonly Port[] {
-  const basePorts = options.compact ? COMPACT_PORTS : PORTS;
+  const basePorts = getBasePorts(options);
   if (!options.challenges.includes("harbors")) return basePorts;
 
   const shuffled = shuffle(
@@ -119,6 +125,12 @@ export function getPortsForOptions(seed: string, options: GenerationOptions): re
     ...port,
     ...shuffled[index],
   }));
+}
+
+function getBasePorts(options: GenerationOptions): readonly Port[] {
+  if (options.layoutKey === "seafarers") return SEAFARERS_PORTS;
+  if (options.layoutKey === "5-6") return FIVE_SIX_PORTS;
+  return options.compact ? COMPACT_PORTS : PORTS;
 }
 
 function chooseScarceResource(seed: string): Resource {

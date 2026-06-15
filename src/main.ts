@@ -37,7 +37,16 @@ const HISTORY_KEY = "catan-board-seed-history";
 const PANEL_STATE_KEY = "catan-board-panel-state";
 const THEME_KEY = "catan-board-theme";
 const sections = ["setup", "seed", "rules", "history", "stats"] as const;
-const resourceOrder: readonly Resource[] = ["wood", "brick", "sheep", "wheat", "ore", "desert"];
+const resourceOrder: readonly Resource[] = [
+  "wood",
+  "brick",
+  "sheep",
+  "wheat",
+  "ore",
+  "gold",
+  "desert",
+  "sea",
+];
 
 let state: AppState;
 let seedHistory: readonly SeedHistoryEntry[] = [];
@@ -311,9 +320,7 @@ function renderRulesAndSetup(): void {
     ? `<p><strong>Active challenges:</strong> ${challenges.join(", ")}</p>`
     : `<p><strong>Active challenges:</strong> None</p>`;
   const expansionRules = expansions.length
-    ? `<p><strong>Expansion notes:</strong> ${
-      expansions.join(", ")
-    } are saved to share URLs and history only in this version.</p>`
+    ? `<p><strong>Expansion notes:</strong> ${renderExpansionNotes(view.selection.expansions)}</p>`
     : `<p><strong>Expansion notes:</strong> None selected.</p>`;
 
   body.innerHTML = `
@@ -324,9 +331,22 @@ function renderRulesAndSetup(): void {
       <h3>Active Effects</h3>
       ${challengeRules}
       ${expansionRules}
-      <p class="muted">Harbor scramble shuffles harbor types across official frame slots. Expansion generation is tracked in the follow-up plan.</p>
+      <p class="muted">Harbor scramble shuffles harbor types across the active board's frame slots.</p>
     </div>
   `;
+}
+
+function renderExpansionNotes(expansions: readonly Expansion[]): string {
+  const notes = expansions.map((expansion) => {
+    if (expansion === "five-six-players") {
+      return "5-6 player extension uses a 30-hex island and 11 harbor slots";
+    }
+    if (expansion === "seafarers") {
+      return "Seafarers uses a sea-and-gold scenario layout";
+    }
+    return "Cities & Knights adds commodities, barbarians, knights, and a 13-point target";
+  });
+  return notes.join("; ");
 }
 
 function renderSeedHistory(): void {

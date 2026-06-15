@@ -67,7 +67,7 @@ export function countAdjacentHighNumbers(board: readonly Hex[]): number {
 
 export function calculatePipBalance(board: readonly Hex[]): number {
   const resourcePips = board.reduce<Record<string, number>>((totals, hex) => {
-    if (hex.resource === "desert") return totals;
+    if (hex.resource === "desert" || hex.resource === "sea") return totals;
     return {
       ...totals,
       [hex.resource]: (totals[hex.resource] ?? 0) + pipsForNumber(hex.number),
@@ -80,11 +80,16 @@ export function calculatePipBalance(board: readonly Hex[]): number {
 }
 
 export function calculateResourceDiversity(board: readonly Hex[]): number {
-  const total = board.reduce((sum, hex) => {
-    const uniqueResources = new Set(getNeighbors(hex, board).map((neighbor) => neighbor.resource));
+  const land = board.filter((hex) => hex.resource !== "sea");
+  const total = land.reduce((sum, hex) => {
+    const uniqueResources = new Set(
+      getNeighbors(hex, board)
+        .filter((neighbor) => neighbor.resource !== "sea")
+        .map((neighbor) => neighbor.resource),
+    );
     return sum + uniqueResources.size;
   }, 0);
-  return total / board.length / 6;
+  return total / land.length / 6;
 }
 
 export function calculateScarcityChallengeScore(board: readonly Hex[], resource: Resource): number {

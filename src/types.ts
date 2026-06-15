@@ -1,6 +1,6 @@
-export type Resource = "wood" | "brick" | "sheep" | "wheat" | "ore" | "desert";
+export type Resource = "wood" | "brick" | "sheep" | "wheat" | "ore" | "desert" | "gold" | "sea";
 export type Mode = "3-4" | "2";
-export type LayoutKey = Mode | "compact";
+export type LayoutKey = Mode | "compact" | "5-6" | "seafarers";
 export type Challenge = "scarce" | "harbors" | "neutral";
 export type Expansion = "five-six-players" | "seafarers" | "cities-knights";
 export type RulePreset = "balanced-neutral" | "open-duel" | "long-game";

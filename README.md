@@ -27,7 +27,7 @@ The generator uses intelligent algorithms to create balanced boards:
 - Copy seed or full URL to clipboard
 - Save seed history locally in browser localStorage
 - Copy/export all saved history entries with share URLs and metadata
-- Toggle future expansion choices in share URLs without changing historical seed output
+- Toggle expansion choices in share URLs; 5-6 and Seafarers now change generated boards
 
 ### Mobile Layout
 
@@ -71,6 +71,19 @@ The 2-player mode supports multiple table setups:
 - Prevents domination of resource-rich areas
 - Creates strategic tension similar to 3-4 player games
 - Standard competitive 2-player Catan variant
+
+### Expansion Generation
+
+Expansion toggles are shareable and saved in local history:
+
+- **5-6 player extension**: generates a 30-hex island with expanded resource and number counts plus
+  11 harbor slots
+- **Seafarers**: generates a scenario-style board with sea and gold hexes
+- **Cities & Knights**: adds setup/rules notes while keeping the active terrain layout unless paired
+  with another generation-changing expansion
+
+Expansion URLs generated before ADR 0006 may produce different boards now that expansion toggles
+affect generation.
 
 ## Live Demo
 
