@@ -18,6 +18,8 @@ export const RESOURCES: Record<Resource, ResourceDefinition> = {
   wheat: { name: "Wheat", color: "#f8fafc", shortLabel: "Wheat" },
   ore: { name: "Ore", color: "#696969", shortLabel: "Ore" },
   desert: { name: "Desert", color: "#deb887", shortLabel: "Desert" },
+  gold: { name: "Gold", color: "#facc15", shortLabel: "Gold" },
+  sea: { name: "Sea", color: "#2563eb", shortLabel: "Sea" },
 };
 
 export const NUMBER_PIPS: Record<number, number> = {
@@ -71,22 +73,97 @@ export const COMPACT_LAYOUT: readonly HexLayout[] = [
   { row: 3, col: 2, q: 0, r: 1 },
 ];
 
+export const FIVE_SIX_LAYOUT: readonly HexLayout[] = createRowLayout([3, 4, 5, 6, 5, 4, 3]);
+export const SEAFARERS_LAYOUT: readonly HexLayout[] = createRowLayout([4, 5, 6, 7, 6, 5, 4]);
+
 export const LAYOUTS: Record<LayoutKey, readonly HexLayout[]> = {
   "3-4": STANDARD_LAYOUT,
   "2": STANDARD_LAYOUT,
   compact: COMPACT_LAYOUT,
+  "5-6": FIVE_SIX_LAYOUT,
+  seafarers: SEAFARERS_LAYOUT,
 };
 
-export const RESOURCE_DISTRIBUTION: Record<LayoutKey, Record<Resource, number>> = {
+export const RESOURCE_DISTRIBUTION: Record<LayoutKey, Partial<Record<Resource, number>>> = {
   "3-4": { wood: 4, brick: 3, sheep: 4, wheat: 4, ore: 3, desert: 1 },
   "2": { wood: 4, brick: 3, sheep: 4, wheat: 4, ore: 3, desert: 1 },
   compact: { wood: 3, brick: 2, sheep: 3, wheat: 2, ore: 2, desert: 1 },
+  "5-6": { wood: 6, brick: 5, sheep: 6, wheat: 6, ore: 5, desert: 2 },
+  seafarers: {
+    wood: 5,
+    brick: 5,
+    sheep: 5,
+    wheat: 5,
+    ore: 5,
+    desert: 3,
+    gold: 2,
+    sea: 7,
+  },
 };
 
 export const NUMBER_DISTRIBUTION: Record<LayoutKey, readonly number[]> = {
   "3-4": [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12],
   "2": [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12],
   compact: [3, 4, 4, 5, 5, 6, 8, 9, 9, 10, 10, 11],
+  "5-6": [
+    2,
+    2,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    5,
+    5,
+    5,
+    6,
+    6,
+    6,
+    8,
+    8,
+    8,
+    9,
+    9,
+    9,
+    10,
+    10,
+    10,
+    11,
+    11,
+    11,
+    12,
+    12,
+  ],
+  seafarers: [
+    2,
+    2,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    5,
+    5,
+    5,
+    6,
+    6,
+    6,
+    8,
+    8,
+    8,
+    9,
+    9,
+    9,
+    10,
+    10,
+    10,
+    11,
+    11,
+    11,
+    12,
+  ],
 };
 
 export const VARIANT_NAMES: Record<Variant, string> = {
@@ -178,6 +255,32 @@ export const COMPACT_PORTS: readonly Port[] = [
   { type: "wood", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
 ];
 
+export const FIVE_SIX_PORTS: readonly Port[] = [
+  { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
+  { type: "wheat", hexRow: 0, hexCol: 2, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "ore", hexRow: 0, hexCol: 2, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
+  { type: "3:1", hexRow: 1, hexCol: 3, vertices: [1, 2], label: "3:1", shortLabel: "?" },
+  { type: "sheep", hexRow: 3, hexCol: 5, vertices: [1, 2], label: "2:1", shortLabel: "Sheep" },
+  { type: "3:1", hexRow: 5, hexCol: 3, vertices: [2, 3], label: "3:1", shortLabel: "?" },
+  { type: "brick", hexRow: 6, hexCol: 2, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
+  { type: "sheep", hexRow: 6, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Sheep" },
+  { type: "wood", hexRow: 5, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Wood" },
+  { type: "3:1", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+];
+
+export const SEAFARERS_PORTS: readonly Port[] = [
+  { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
+  { type: "wheat", hexRow: 0, hexCol: 3, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "ore", hexRow: 1, hexCol: 4, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
+  { type: "3:1", hexRow: 3, hexCol: 6, vertices: [1, 2], label: "3:1", shortLabel: "?" },
+  { type: "sheep", hexRow: 5, hexCol: 4, vertices: [2, 3], label: "2:1", shortLabel: "Sheep" },
+  { type: "3:1", hexRow: 6, hexCol: 2, vertices: [2, 3], label: "3:1", shortLabel: "?" },
+  { type: "brick", hexRow: 6, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Brick" },
+  { type: "wood", hexRow: 4, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
+  { type: "3:1", hexRow: 2, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+];
+
 export const GHOST_SETTLEMENTS: readonly GhostSettlement[] = [
   { hexRow: 0, hexCol: 0, vertex: 5 },
   { hexRow: 0, hexCol: 2, vertex: 1 },
@@ -209,3 +312,17 @@ export const COMPACT_EXTRA_GHOST_SETTLEMENTS: readonly GhostSettlement[] = [
   { hexRow: 1, hexCol: 1, vertex: 0 },
   { hexRow: 2, hexCol: 1, vertex: 3 },
 ];
+
+function createRowLayout(rowLengths: readonly number[]): readonly HexLayout[] {
+  const middle = Math.floor(rowLengths.length / 2);
+  return rowLengths.flatMap((length, row) => {
+    const r = row - middle;
+    const startQ = row <= middle ? -row : -middle;
+    return Array.from({ length }, (_, col) => ({
+      row,
+      col,
+      q: startQ + col,
+      r,
+    }));
+  });
+}

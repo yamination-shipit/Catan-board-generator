@@ -1,9 +1,9 @@
 ---
 title: Expansion Generation
 date: 2026-06-15
-last_updated: 2026-06-15T16:12:00Z
+last_updated: 2026-06-15T17:16:46Z
 type: implementation-plan
-status: planned
+status: done
 ---
 
 # 1. Expansion Generation
@@ -30,6 +30,15 @@ history entries.
 
 ## 1.4 Validation
 
-Add per-expansion domain tests for board size, resource counts, number counts, deterministic seeds,
-ports, URL parsing, and difficulty scoring. Add browser tests for selecting each expansion and
-loading shared expansion URLs.
+| Command               | Result                                     |
+| --------------------- | ------------------------------------------ |
+| `just check`          | Pass                                       |
+| `just test`           | Pass, 18 domain tests                      |
+| `just ci`             | Pass                                       |
+| `just test-honeycomb` | Pass, browser expansion rendering coverage |
+
+## 1.5 Result
+
+V1 implements 5-6 and Seafarers as generation-changing layouts. Cities & Knights adds rules/setup
+notes unless paired with another generation-changing expansion. ADR 0006 documents the accepted seed
+compatibility break.

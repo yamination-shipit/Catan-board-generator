@@ -68,7 +68,9 @@ export function generateRandomBoard(
   let numberIndex = 0;
   const board = layout.map((position, index): Hex => {
     const resource = shuffledResources.value[index] as Resource;
-    const number = resource === "desert" ? null : shuffledNumbers.value[numberIndex++] as number;
+    const number = resource === "desert" || resource === "sea"
+      ? null
+      : shuffledNumbers.value[numberIndex++] as number;
     return { ...position, resource, number };
   });
 
@@ -91,7 +93,7 @@ export function summarizeBoard(board: readonly Hex[]): readonly string[] {
   return board.map((hex) => `${hex.row}:${hex.col}:${hex.resource}:${hex.number ?? "none"}`);
 }
 
-function createResourcePool(distribution: Record<Resource, number>): readonly Resource[] {
+function createResourcePool(distribution: Partial<Record<Resource, number>>): readonly Resource[] {
   return Object.entries(distribution).flatMap(([resource, count]) =>
     Array.from({ length: count }, () => resource as Resource)
   );

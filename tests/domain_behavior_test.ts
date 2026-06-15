@@ -9,7 +9,7 @@ import {
   countAdjacentHighNumbers,
   evaluateBoard,
 } from "../src/domain/scoring.ts";
-import { PORTS, RESOURCES } from "../src/domain/rules.ts";
+import { FIVE_SIX_PORTS, PORTS, RESOURCES, SEAFARERS_PORTS } from "../src/domain/rules.ts";
 import { renderBoardSvg } from "../src/rendering/svg.ts";
 import type { GenerationSelection, Hex, SeedHistoryEntry } from "../src/types.ts";
 
@@ -310,22 +310,72 @@ Deno.test("renderBoardSvg_WhenUsingCompactChallengeSeed_MatchesStableSnapshotSha
   assert.ok(svg.includes(">N</text>"));
 });
 
-Deno.test("summarizeBoard_WhenExpansionsAreMetadataOnly_PreservesHistoricalSeedBoard", () => {
+Deno.test("createBoardView_WhenFiveSixPlayerExtensionIsSelected_UsesExpansionBoard", () => {
+  // Arrange
+  const choice = selection({
+    expansions: ["five-six-players"],
+  });
+
+  // Act
+  const view = createBoardView("docs-seed", choice);
+  const resources = countBy(view.board.map((hex) => hex.resource));
+  const numbers = view.board.flatMap((hex) => hex.number === null ? [] : [hex.number]);
+
+  // Assert
+  assert.equal(view.options.layoutKey, "5-6");
+  assert.equal(view.board.length, 30);
+  assert.deepEqual(resources, { brick: 5, desert: 2, ore: 5, sheep: 6, wheat: 6, wood: 6 });
+  assert.equal(numbers.length, 28);
+  assert.deepEqual(view.ports, FIVE_SIX_PORTS);
+});
+
+Deno.test("createBoardView_WhenSeafarersIsSelected_UsesSeaAndGoldScenarioBoard", () => {
+  // Arrange
+  const choice = selection({
+    expansions: ["seafarers"],
+  });
+
+  // Act
+  const view = createBoardView("docs-seed", choice);
+  const resources = countBy(view.board.map((hex) => hex.resource));
+  const seaNumbers = view.board.filter((hex) => hex.resource === "sea").map((hex) => hex.number);
+  const goldNumbers = view.board.filter((hex) => hex.resource === "gold").map((hex) => hex.number);
+
+  // Assert
+  assert.equal(view.options.layoutKey, "seafarers");
+  assert.equal(view.board.length, 37);
+  assert.deepEqual(resources, {
+    brick: 5,
+    desert: 3,
+    gold: 2,
+    ore: 5,
+    sea: 7,
+    sheep: 5,
+    wheat: 5,
+    wood: 5,
+  });
+  assert.deepEqual(seaNumbers, Array.from({ length: 7 }, () => null));
+  assert.equal(goldNumbers.length, 2);
+  assert.ok(goldNumbers.every((number) => number !== null));
+  assert.deepEqual(view.ports, SEAFARERS_PORTS);
+});
+
+Deno.test("createBoardView_WhenCitiesKnightsIsSelected_LeavesTerrainGenerationToBaseBoard", () => {
   // Arrange
   const base = createBoardView("docs-seed", selection());
 
   // Act
-  const expanded = createBoardView(
+  const citiesKnights = createBoardView(
     "docs-seed",
     selection({
-      expansions: ["five-six-players", "seafarers", "cities-knights"],
+      expansions: ["cities-knights"],
     }),
   );
 
   // Assert
-  assert.deepEqual(summarizeBoard(expanded.board), summarizeBoard(base.board));
-  assert.deepEqual(expanded.ports, base.ports);
-  assert.deepEqual(expanded.difficulty, base.difficulty);
+  assert.equal(citiesKnights.options.layoutKey, "3-4");
+  assert.deepEqual(summarizeBoard(citiesKnights.board), summarizeBoard(base.board));
+  assert.deepEqual(citiesKnights.ports, base.ports);
 });
 
 function countBy(values: readonly string[]): Record<string, number> {

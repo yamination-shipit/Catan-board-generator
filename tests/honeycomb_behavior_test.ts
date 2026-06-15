@@ -51,7 +51,7 @@ Deno.test({
       assert.equal(await page.locator("#challenge-neutral").isDisabled(), true);
       assert.ok(
         await page.locator("#expansion-note").textContent().then((text) =>
-          text?.replace(/\s+/g, " ").includes("do not change generation")
+          text?.replace(/\s+/g, " ").includes("5-6 uses a larger island")
         ),
       );
 
@@ -72,9 +72,11 @@ Deno.test({
       assert.ok(new URL(page.url()).searchParams.get("expansions")?.includes("seafarers"));
       assert.ok(
         await page.locator("#rules-body").textContent().then((text) =>
-          text?.includes("saved to share URLs and history only")
+          text?.includes("Seafarers uses a sea-and-gold scenario layout")
         ),
       );
+      await page.waitForSelector('.hex[data-resource="sea"]');
+      await page.waitForSelector('.hex[data-resource="gold"]');
       await assertMobileLayoutFits(page);
       await assertBoardFits(page);
     } finally {
