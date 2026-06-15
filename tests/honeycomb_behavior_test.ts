@@ -16,6 +16,17 @@ Deno.test({
 
     try {
       const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: (text: string) => {
+              (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText = text;
+              return Promise.resolve();
+            },
+          },
+        });
+      });
       await page.goto(baseUrl);
       await page.waitForSelector("#board-svg");
 
@@ -23,6 +34,8 @@ Deno.test({
       await assertMobileLayoutFits(page);
       await assertBoardFits(page);
       await assertPointerPanMovesBoard(page);
+      await assertTopCopyUsesFullUrl(page);
+      await assertResourceHighlightingWorks(page);
 
       await page.locator("#generate-btn").click();
       await page.waitForSelector("#board-svg");
@@ -34,12 +47,22 @@ Deno.test({
       await page.locator("#collapse-all-btn").click();
       assert.equal(await page.locator("#collapse-all-btn").textContent(), "Collapse");
 
+      assert.equal(await page.locator("#variant-select").isDisabled(), true);
+      assert.equal(await page.locator("#challenge-neutral").isDisabled(), true);
+      assert.ok(
+        await page.locator("#expansion-note").textContent().then((text) =>
+          text?.replace(/\s+/g, " ").includes("do not change generation")
+        ),
+      );
+
       await page.locator("#mode-2").click();
+      assert.equal(await page.locator("#variant-select").isEnabled(), true);
+      assert.equal(await page.locator("#challenge-neutral").isEnabled(), true);
       await page.locator("#variant-select").selectOption("compact-tight");
       await page.locator("#rule-preset-select").selectOption("balanced-neutral");
       await page.waitForSelector(".neutral-road");
       assert.ok(
-        await page.locator("#setup-body").textContent().then((text) =>
+        await page.locator("#rules-body").textContent().then((text) =>
           text?.includes("neutral roads")
         ),
       );
@@ -47,6 +70,11 @@ Deno.test({
       await page.locator("#expansion-seafarers").check();
       await page.waitForFunction(() => location.search.includes("expansions=seafarers"));
       assert.ok(new URL(page.url()).searchParams.get("expansions")?.includes("seafarers"));
+      assert.ok(
+        await page.locator("#rules-body").textContent().then((text) =>
+          text?.includes("saved to share URLs and history only")
+        ),
+      );
       await assertMobileLayoutFits(page);
       await assertBoardFits(page);
     } finally {
@@ -123,6 +151,27 @@ async function assertPointerPanMovesBoard(page: Page): Promise<void> {
     getComputedStyle(node).transform
   );
   assert.notEqual(after, before);
+}
+
+async function assertTopCopyUsesFullUrl(page: Page): Promise<void> {
+  await page.locator("#copy-url-btn").click();
+  await page.waitForFunction(() =>
+    Boolean((globalThis as typeof globalThis & { __copiedText?: string }).__copiedText)
+  );
+  const copiedText = await page.evaluate(() =>
+    (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText
+  );
+  assert.equal(copiedText, page.url());
+}
+
+async function assertResourceHighlightingWorks(page: Page): Promise<void> {
+  await page.locator('.stat-tile[data-resource="wheat"]').click();
+  assert.ok(await page.locator('.stat-tile[data-resource="wheat"].is-selected-resource').count());
+  assert.ok(await page.locator('.hex[data-resource="wheat"].is-selected-resource').count());
+
+  await page.locator('.hex[data-resource="wood"]').first().click();
+  assert.ok(await page.locator('.stat-tile[data-resource="wood"].is-selected-resource').count());
+  assert.ok(await page.locator('.hex[data-resource="wood"].is-selected-resource').count());
 }
 
 async function closeBrowser(browser: Browser): Promise<void> {

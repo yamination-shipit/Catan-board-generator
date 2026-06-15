@@ -5,11 +5,10 @@ Current session state lives in dated files under `handover/`.
 Before ending non-trivial work, update this file with the latest handover note and keep the active
 `.plans/` file current.
 
-Latest note: `handover/20260613-2025--mobile-portrait-layout.md`
+Latest note: `handover/20260615-1645--ui-rules-port-fixes.md`
 
-Latest plan: `.plans/20260613-2014-done-mobile-portrait-layout.md`.
+Latest plan: `.plans/20260615-1603-done-ui-rules-port-fixes.md`.
 
-Current work fixed mobile portrait overflow, added touch/pointer board pan and pinch zoom, and
-extended honeycomb browser tests for viewport fit. This branch has also merged the latest master
-work that repaired Pages formatting, PR title validation, plan formatting, and the README live demo
-URL.
+Current work fixed official harbor frame slots, top URL copying, context-specific toggle feedback,
+white wheat rendering, resource highlighting, and the dedicated Rules & Setup section. A follow-up
+plan exists for real expansion generation: `.plans/20260615-1612-planned-expansion-generation.md`.

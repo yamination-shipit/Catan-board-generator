@@ -60,6 +60,13 @@ button:hover {
   filter: brightness(1.05);
 }
 
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 button.primary {
   background: var(--primary);
 }
@@ -297,6 +304,18 @@ a {
   padding: 0.8rem;
 }
 
+.control-note {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.is-disabled .control-note {
+  color: #b45309;
+}
+
 .challenge-grid input,
 .expansion-grid input {
   min-height: 0;
@@ -306,6 +325,10 @@ a {
 .seed-row {
   display: grid;
   gap: 0.5rem;
+}
+
+.seed-actions {
+  margin-top: 0.6rem;
 }
 
 .history-list {
@@ -337,10 +360,26 @@ a {
   background: var(--panel-soft);
   border: 1px solid var(--border);
   border-radius: 8px;
+  color: var(--text);
   display: grid;
   gap: 0.25rem;
   justify-items: center;
   padding: 0.8rem;
+  text-align: center;
+}
+
+.stat-tile small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.stat-tile.is-selected-resource {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 24%);
+}
+
+.stat-tile.is-dimmed-resource {
+  opacity: 0.46;
 }
 
 .rules {
@@ -349,6 +388,37 @@ a {
   font-size: 0.88rem;
   margin-top: 1rem;
   padding-top: 1rem;
+}
+
+.rules-block + .rules-block {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.rules-block h3 {
+  font-size: 1rem;
+  margin: 0 0 0.45rem;
+}
+
+.hex {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 120ms ease;
+}
+
+.hex .hex-fill {
+  transition: stroke-width 120ms ease, opacity 120ms ease;
+}
+
+.hex.is-selected-resource .hex-fill {
+  opacity: 1;
+  stroke: #f59e0b;
+  stroke-width: 5;
+}
+
+.hex.is-dimmed-resource {
+  opacity: 0.34;
 }
 
 .notification {

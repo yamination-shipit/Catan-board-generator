@@ -92,7 +92,7 @@ function renderHex(center: Point, size: number, hex: Hex): string {
   const number = hex.number;
   const pips = pipsForNumber(number);
   const token = number === null ? "" : renderNumberToken(center, number, pips);
-  return `<g class="hex"><polygon points="${
+  return `<g class="hex resource-${hex.resource}" data-resource="${hex.resource}" tabindex="0"><polygon class="hex-fill" points="${
     hexPoints(center.x, center.y, size)
   }" fill="${resource.color}" stroke="#263238" stroke-width="2" opacity="0.92"/>
 <text x="${center.x}" y="${

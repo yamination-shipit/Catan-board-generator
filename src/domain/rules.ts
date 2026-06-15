@@ -15,7 +15,7 @@ export const RESOURCES: Record<Resource, ResourceDefinition> = {
   wood: { name: "Wood", color: "#228b22", shortLabel: "Wood" },
   brick: { name: "Brick", color: "#b22222", shortLabel: "Brick" },
   sheep: { name: "Sheep", color: "#8fce72", shortLabel: "Sheep" },
-  wheat: { name: "Wheat", color: "#f4c430", shortLabel: "Wheat" },
+  wheat: { name: "Wheat", color: "#f8fafc", shortLabel: "Wheat" },
   ore: { name: "Ore", color: "#696969", shortLabel: "Ore" },
   desert: { name: "Desert", color: "#deb887", shortLabel: "Desert" },
 };
@@ -159,14 +159,14 @@ export const RULE_PRESETS: Record<
 
 export const PORTS: readonly Port[] = [
   { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
-  { type: "wheat", hexRow: 0, hexCol: 1, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "wheat", hexRow: 0, hexCol: 2, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
   { type: "ore", hexRow: 0, hexCol: 2, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
-  { type: "sheep", hexRow: 1, hexCol: 3, vertices: [1, 2], label: "2:1", shortLabel: "Sheep" },
   { type: "3:1", hexRow: 2, hexCol: 4, vertices: [1, 2], label: "3:1", shortLabel: "?" },
-  { type: "brick", hexRow: 3, hexCol: 3, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
-  { type: "wood", hexRow: 4, hexCol: 2, vertices: [2, 3], label: "2:1", shortLabel: "Wood" },
-  { type: "3:1", hexRow: 4, hexCol: 0, vertices: [3, 4], label: "3:1", shortLabel: "?" },
-  { type: "3:1", hexRow: 2, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+  { type: "sheep", hexRow: 3, hexCol: 3, vertices: [2, 3], label: "2:1", shortLabel: "Sheep" },
+  { type: "3:1", hexRow: 4, hexCol: 2, vertices: [3, 4], label: "3:1", shortLabel: "?" },
+  { type: "brick", hexRow: 4, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Brick" },
+  { type: "wood", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
+  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
 ];
 
 export const COMPACT_PORTS: readonly Port[] = [
