@@ -11,6 +11,10 @@ Branch: `codex/expansion-generation`
 Implemented generation-changing expansion toggles after the user accepted breaking seed behavior.
 This branch builds on `codex/ui-rules-port-fixes`.
 
+Branching note: this plan was created on the UI fixes branch before that work reached `master`.
+Future continuation should branch from the existing expansion/UI branch stack, or from `master` only
+after that stack has merged.
+
 ## Changed
 
 | Area                 | Result                                                                      |
