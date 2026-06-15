@@ -9,6 +9,7 @@ import {
   countAdjacentHighNumbers,
   evaluateBoard,
 } from "../src/domain/scoring.ts";
+import { PORTS, RESOURCES } from "../src/domain/rules.ts";
 import { renderBoardSvg } from "../src/rendering/svg.ts";
 import type { GenerationSelection, Hex, SeedHistoryEntry } from "../src/types.ts";
 
@@ -126,6 +127,36 @@ Deno.test("getPortsForOptions_WhenHarborsChallengeIsEnabled_ShufflesDeterministi
   // Assert
   assert.deepEqual(first, second);
   assert.equal(first.length, 6);
+});
+
+Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlots", () => {
+  // Arrange
+  const options = getGenerationOptions("port-seed", selection());
+
+  // Act
+  const ports = getPortsForOptions("port-seed", options);
+
+  // Assert
+  assert.deepEqual(
+    ports.map((port) => `${port.hexRow}:${port.hexCol}:${port.vertices.join("-")}`),
+    [
+      "0:0:5-0",
+      "0:2:5-0",
+      "0:2:1-2",
+      "2:4:1-2",
+      "3:3:2-3",
+      "4:2:3-4",
+      "4:0:3-4",
+      "3:0:4-5",
+      "1:0:4-5",
+    ],
+  );
+  assert.deepEqual(ports, PORTS);
+});
+
+Deno.test("resources_WhenRenderingWheat_UsesWhiteTileColor", () => {
+  // Arrange / Act / Assert
+  assert.equal(RESOURCES.wheat.color, "#f8fafc");
 });
 
 Deno.test("createShareUrl_WhenChallengesAreEmpty_RemovesChallengeParameter", () => {

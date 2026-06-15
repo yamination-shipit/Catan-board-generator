@@ -18,20 +18,31 @@ import {
   VARIANT_DESCRIPTIONS,
   VARIANT_NAMES,
 } from "./domain/rules.ts";
+import { pipsForNumber } from "./domain/board.ts";
 import { getGhostSettlements } from "./domain/options.ts";
 import { createShareUrl, parseShareSearch } from "./domain/share-url.ts";
 import { upsertSeedHistory } from "./domain/history.ts";
 import { renderBoardSvg } from "./rendering/svg.ts";
-import type { Challenge, Expansion, Mode, RulePreset, SeedHistoryEntry, Variant } from "./types.ts";
+import type {
+  Challenge,
+  Expansion,
+  Mode,
+  Resource,
+  RulePreset,
+  SeedHistoryEntry,
+  Variant,
+} from "./types.ts";
 
 const HISTORY_KEY = "catan-board-seed-history";
 const PANEL_STATE_KEY = "catan-board-panel-state";
 const THEME_KEY = "catan-board-theme";
-const sections = ["setup", "seed", "twoPlayer", "history", "stats"] as const;
+const sections = ["setup", "seed", "rules", "history", "stats"] as const;
+const resourceOrder: readonly Resource[] = ["wood", "brick", "sheep", "wheat", "ore", "desert"];
 
 let state: AppState;
 let seedHistory: readonly SeedHistoryEntry[] = [];
 let collapsedSections: Record<string, boolean> = {};
+let selectedResource: Resource | null = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const parsed = parseShareSearch(globalThis.location.search);
@@ -97,6 +108,12 @@ function bindEvents(): void {
 
 function switchMode(mode: Mode): void {
   state = withMode(state, mode);
+  if (mode === "3-4" && state.selection.challenges.includes("neutral")) {
+    state = withChallenges(
+      state,
+      state.selection.challenges.filter((challenge) => challenge !== "neutral"),
+    );
+  }
   syncControlsFromState();
   refreshCurrentBoard();
 }
@@ -124,7 +141,7 @@ function generateBoard(seed: string, saveHistory: boolean): void {
   renderStats(view.board);
   renderDifficulty();
   renderCurrentSeed();
-  renderSetupInstructions();
+  renderRulesAndSetup();
   globalThis.history.pushState(
     {},
     "",
@@ -171,18 +188,40 @@ function renderBoard(view = state.boardView): void {
     </div>
   `;
   initZoom();
+  applyResourceHighlight();
 }
 
 function renderStats(board = state.boardView?.board ?? []): void {
-  const counts = board.reduce<Record<string, number>>((stats, hex) => ({
-    ...stats,
-    [hex.resource]: (stats[hex.resource] ?? 0) + 1,
-  }), {});
+  const stats = board.reduce<Partial<Record<Resource, { count: number; pips: number }>>>(
+    (totals, hex) => ({
+      ...totals,
+      [hex.resource]: {
+        count: (totals[hex.resource]?.count ?? 0) + 1,
+        pips: (totals[hex.resource]?.pips ?? 0) + pipsForNumber(hex.number),
+      },
+    }),
+    {},
+  );
 
-  byId("stats").innerHTML = Object.entries(counts).map(([resource, count]) => {
-    const definition = RESOURCES[resource as keyof typeof RESOURCES];
-    return `<div class="stat-tile"><strong>${definition.name}</strong><span>${count}x</span></div>`;
-  }).join("");
+  byId("stats").innerHTML = resourceOrder
+    .filter((resource) => stats[resource])
+    .map((resource) => {
+      const definition = RESOURCES[resource];
+      const totals = stats[resource];
+      if (!totals) return "";
+      return `<button class="stat-tile" type="button" data-resource="${resource}">
+        <strong>${definition.name}</strong>
+        <span>${totals.count}x</span>
+        <small>${totals.pips} pips</small>
+      </button>`;
+    }).join("");
+  byId("stats").querySelectorAll<HTMLElement>("[data-resource]").forEach((tile) => {
+    tile.addEventListener(
+      "click",
+      () => toggleResourceHighlight(tile.dataset.resource as Resource),
+    );
+  });
+  applyResourceHighlight();
 }
 
 function renderDifficulty(): void {
@@ -223,17 +262,17 @@ function renderCurrentSeed(): void {
   byId("current-seed").textContent = parts.join(" | ");
 }
 
-function renderSetupInstructions(): void {
+function renderRulesAndSetup(): void {
   const view = state.boardView;
-  const panel = byId("setup-instructions");
-  if (!view || view.selection.mode !== "2") {
-    panel.classList.add("hidden");
+  const body = byId("rules-body");
+  if (!view) {
+    body.innerHTML = "<p>Generate a board to see setup rules.</p>";
     return;
   }
-  panel.classList.remove("hidden");
   const variant = view.selection.variant;
   const preset = RULE_PRESETS[view.selection.rulePreset];
   const challenges = view.selection.challenges.map((challenge) => CHALLENGE_NAMES[challenge]);
+  const expansions = view.selection.expansions.map((expansion) => EXPANSION_NAMES[expansion]);
   const neutralCount = getGhostSettlements(
     view.selection.mode,
     view.selection.variant,
@@ -242,29 +281,51 @@ function renderSetupInstructions(): void {
   const neutralRoadText = neutralCount > 0 && preset.neutralRoads
     ? "Place the neutral road markers connected to those neutral settlements."
     : "No neutral roads are used for this rules preset.";
-  byId("setup-body").innerHTML = `
-    <p><strong>${VARIANT_NAMES[variant]}</strong></p>
-    <p>${VARIANT_DESCRIPTIONS[variant]}</p>
+
+  const setupRules = view.selection.mode === "2"
+    ? `
+    <h3>2-Player Setup</h3>
+    <p><strong>${VARIANT_NAMES[variant]}</strong>: ${VARIANT_DESCRIPTIONS[variant]}</p>
     <p><strong>${RULE_PRESET_NAMES[view.selection.rulePreset]}</strong>: ${preset.summary}</p>
     <ol>
       <li>Use the ${
-    variant.startsWith("compact") ? "13-hex compact board" : "19-hex full board"
-  } shown above.</li>
+      variant.startsWith("compact") ? "13-hex compact board" : "19-hex full board"
+    } shown above.</li>
       <li>${
-    variant === "full-open" || variant === "compact-duel"
-      ? "No neutral settlements are used."
-      : "Place the neutral settlements marked with N on the board vertices."
-  }</li>
+      variant === "full-open" || variant === "compact-duel"
+        ? "No neutral settlements are used."
+        : "Place the neutral settlements marked with N on the board vertices."
+    }</li>
       <li>${neutralRoadText}</li>
       <li>Each player starts with ${preset.startingSettlements} settlements and ${preset.startingRoads} roads.</li>
       <li>First to ${preset.victoryPoints} victory points wins.</li>
     </ol>
-    ${
-    challenges.length ? `<p><strong>Active challenges:</strong> ${challenges.join(", ")}</p>` : ""
-  }
     <p class="muted">Rendered setup markers: ${neutralCount} neutral settlements${
-    neutralCount > 0 && preset.neutralRoads ? ` and ${neutralCount} neutral roads` : ""
-  }</p>
+      neutralCount > 0 && preset.neutralRoads ? ` and ${neutralCount} neutral roads` : ""
+    }</p>`
+    : `
+    <h3>Standard Setup</h3>
+    <p>Use the generated 19-hex island with normal 3-4 player Catan setup rules.</p>`;
+
+  const challengeRules = challenges.length
+    ? `<p><strong>Active challenges:</strong> ${challenges.join(", ")}</p>`
+    : `<p><strong>Active challenges:</strong> None</p>`;
+  const expansionRules = expansions.length
+    ? `<p><strong>Expansion notes:</strong> ${
+      expansions.join(", ")
+    } are saved to share URLs and history only in this version.</p>`
+    : `<p><strong>Expansion notes:</strong> None selected.</p>`;
+
+  body.innerHTML = `
+    <div class="rules-block">
+      ${setupRules}
+    </div>
+    <div class="rules-block">
+      <h3>Active Effects</h3>
+      ${challengeRules}
+      ${expansionRules}
+      <p class="muted">Harbor scramble shuffles harbor types across official frame slots. Expansion generation is tracked in the follow-up plan.</p>
+    </div>
   `;
 }
 
@@ -392,8 +453,18 @@ function syncControlsFromState(): void {
   const mode = state.selection.mode;
   byId("mode-34").classList.toggle("is-selected", mode === "3-4");
   byId("mode-2").classList.toggle("is-selected", mode === "2");
-  byId("variant-control").classList.toggle("hidden", mode !== "2");
-  byId("rules-control").classList.toggle("hidden", mode !== "2");
+  setDisabled("variant-select", mode !== "2");
+  setDisabled("rule-preset-select", mode !== "2");
+  setDisabled("challenge-neutral", mode !== "2");
+  byId("variant-control").classList.toggle("is-disabled", mode !== "2");
+  byId("rules-control").classList.toggle("is-disabled", mode !== "2");
+  byId("challenge-neutral-control").classList.toggle("is-disabled", mode !== "2");
+  byId("variant-note").textContent = mode === "2"
+    ? "Changes the 2-player board variant."
+    : "Disabled in 3-4 player mode.";
+  byId("rules-note").textContent = mode === "2"
+    ? "Changes setup notes and neutral road overlays."
+    : "Disabled in 3-4 player mode.";
   setSelectValue("variant-select", state.selection.variant);
   setSelectValue("rule-preset-select", state.selection.rulePreset);
   setChecked("challenge-scarce", state.selection.challenges.includes("scarce"));
@@ -402,7 +473,7 @@ function syncControlsFromState(): void {
   setChecked("expansion-five-six-players", state.selection.expansions.includes("five-six-players"));
   setChecked("expansion-seafarers", state.selection.expansions.includes("seafarers"));
   setChecked("expansion-cities-knights", state.selection.expansions.includes("cities-knights"));
-  renderSetupInstructions();
+  renderRulesAndSetup();
 }
 
 function readChallenges(): readonly Challenge[] {
@@ -452,6 +523,23 @@ function renderPanelState(): void {
   byId("collapse-all-btn").textContent = sections.every((section) => collapsedSections[section])
     ? "Expand"
     : "Collapse";
+}
+
+function toggleResourceHighlight(resource: Resource): void {
+  selectedResource = selectedResource === resource ? null : resource;
+  applyResourceHighlight();
+}
+
+function applyResourceHighlight(): void {
+  document.querySelectorAll<HTMLElement>("[data-resource]").forEach((element) => {
+    const matches = selectedResource !== null && element.dataset.resource === selectedResource;
+    const dims = selectedResource !== null && element.dataset.resource !== selectedResource;
+    element.classList.toggle("is-selected-resource", matches);
+    element.classList.toggle("is-dimmed-resource", dims);
+    if (element.classList.contains("stat-tile")) {
+      element.setAttribute("aria-pressed", String(matches));
+    }
+  });
 }
 
 function applyStoredTheme(): void {
@@ -570,21 +658,42 @@ function initZoom(): void {
   const activePointers = new Map<number, Point>();
   let lastPanPoint: Point | null = null;
   let pinchStart: { readonly distance: number; readonly scale: number } | null = null;
+  let tapStart: {
+    readonly pointerId: number;
+    readonly point: Point;
+    readonly resource: Resource;
+  } | null = null;
 
   wrapper.addEventListener("pointerdown", (event) => {
     if (event.target instanceof Element && event.target.closest(".zoom-controls")) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    const resourceElement = event.target instanceof Element
+      ? event.target.closest<HTMLElement>("[data-resource]")
+      : null;
     event.preventDefault();
     wrapper.setPointerCapture(event.pointerId);
     activePointers.set(event.pointerId, pointFromEvent(event));
     isPanning = activePointers.size === 1;
     lastPanPoint = activePointers.size === 1 ? pointFromEvent(event) : null;
     pinchStart = null;
+    tapStart = resourceElement?.dataset.resource
+      ? {
+        pointerId: event.pointerId,
+        point: pointFromEvent(event),
+        resource: resourceElement.dataset.resource as Resource,
+      }
+      : null;
   }, { signal: zoomAbortController.signal });
 
   wrapper.addEventListener("pointermove", (event) => {
     if (!activePointers.has(event.pointerId)) return;
     event.preventDefault();
+    if (
+      tapStart?.pointerId === event.pointerId &&
+      distanceBetween(tapStart.point, pointFromEvent(event)) > 8
+    ) {
+      tapStart = null;
+    }
     activePointers.set(event.pointerId, pointFromEvent(event));
     const points = [...activePointers.values()];
     if (points.length >= 2) {
@@ -615,6 +724,13 @@ function initZoom(): void {
 
   const endPointer = (event: PointerEvent) => {
     if (!activePointers.has(event.pointerId)) return;
+    if (
+      tapStart?.pointerId === event.pointerId &&
+      distanceBetween(tapStart.point, pointFromEvent(event)) <= 8
+    ) {
+      toggleResourceHighlight(tapStart.resource);
+    }
+    tapStart = null;
     activePointers.delete(event.pointerId);
     if (wrapper.hasPointerCapture(event.pointerId)) wrapper.releasePointerCapture(event.pointerId);
     const remaining = [...activePointers.values()];
@@ -717,4 +833,8 @@ function isChecked(id: string): boolean {
 
 function setChecked(id: string, checked: boolean): void {
   (byId(id) as HTMLInputElement).checked = checked;
+}
+
+function setDisabled(id: string, disabled: boolean): void {
+  (byId(id) as HTMLInputElement | HTMLSelectElement).disabled = disabled;
 }

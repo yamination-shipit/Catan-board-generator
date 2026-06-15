@@ -65,10 +65,14 @@ export function withBoard(state: AppState, seed: string): AppState {
 }
 
 function normalizeSelection(selection: GenerationSelection): GenerationSelection {
+  const challenges = selection.mode === "2"
+    ? selection.challenges
+    : selection.challenges.filter((challenge) => challenge !== "neutral");
+
   return {
     mode: selection.mode,
     variant: selection.variant,
-    challenges: [...new Set(selection.challenges)],
+    challenges: [...new Set(challenges)],
     expansions: [...new Set(selection.expansions ?? defaultSelection.expansions)],
     rulePreset: selection.rulePreset ?? defaultSelection.rulePreset,
   };

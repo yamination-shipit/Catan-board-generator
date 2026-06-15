@@ -30,8 +30,7 @@
               <button id="generate-btn" class="primary">New Board</button>
               <button id="fullscreen-btn">Fullscreen</button>
               <button id="board-reset-zoom-btn">Reset Zoom</button>
-              <button id="copy-seed-btn">Copy Seed</button>
-              <button id="copy-url-btn">Share URL</button>
+              <button id="copy-url-btn">Copy URL</button>
             </div>
           </div>
           <div id="board-container" class="board-container">
@@ -52,7 +51,7 @@
                   <button id="mode-2">2 Players</button>
                 </div>
               </div>
-              <div id="variant-control" class="hidden">
+              <div id="variant-control">
                 <label for="variant-select">2-Player Variant</label>
                 <select id="variant-select">
                   <option value="full-neutral">Full board + neutral settlements</option>
@@ -61,20 +60,23 @@
                   <option value="compact-duel">Compact duel</option>
                   <option value="compact-tight">Compact tight</option>
                 </select>
+                <p id="variant-note" class="control-note">Only affects 2-player mode.</p>
               </div>
-              <div id="rules-control" class="hidden">
+              <div id="rules-control">
                 <label for="rule-preset-select">2-Player Rules</label>
                 <select id="rule-preset-select">
                   <option value="balanced-neutral">Balanced neutral setup</option>
                   <option value="open-duel">Open duel</option>
                   <option value="long-game">Long game</option>
                 </select>
+                <p id="rules-note" class="control-note">Only affects 2-player setup notes.</p>
               </div>
             </div>
             <div class="challenge-grid">
               <label><input type="checkbox" id="challenge-scarce"> Scarce resources</label>
               <label><input type="checkbox" id="challenge-harbors"> Harbor scramble</label>
-              <label><input type="checkbox" id="challenge-neutral"> Neutral pressure</label>
+              <label id="challenge-neutral-control"><input type="checkbox" id="challenge-neutral">
+                Neutral pressure <span class="control-note">2-player only</span></label>
             </div>
             <div class="expansion-grid">
               <label><input type="checkbox" id="expansion-five-six-players"> 5-6 player
@@ -82,6 +84,10 @@
               <label><input type="checkbox" id="expansion-seafarers"> Seafarers</label>
               <label><input type="checkbox" id="expansion-cities-knights"> Cities & Knights</label>
             </div>
+            <p id="expansion-note" class="muted">
+              Expansion selections are saved in the share URL and history as rules notes. They do
+              not change generation until expansion layouts are implemented.
+            </p>
           </div>
         </section>
 
@@ -95,16 +101,19 @@
               <input type="text" id="seed-input" placeholder="Enter a seed to load">
               <button id="load-seed-btn">Load Seed</button>
             </div>
+            <div class="inline-actions seed-actions">
+              <button id="copy-seed-btn">Copy Seed</button>
+            </div>
             <p class="muted">Saved history uses localStorage and stays in this browser.</p>
           </div>
         </section>
 
-        <section id="setup-instructions" class="panel hidden">
-          <button class="section-toggle" data-section-toggle="twoPlayer">
-            <span>2-Player Setup</span><span data-section-icon="twoPlayer">-</span>
+        <section id="rules-panel" class="panel">
+          <button class="section-toggle" data-section-toggle="rules">
+            <span>Rules & Setup</span><span data-section-icon="rules">-</span>
           </button>
-          <div id="section-twoPlayer" class="section-body">
-            <div id="setup-body"></div>
+          <div id="section-rules" class="section-body">
+            <div id="rules-body"></div>
           </div>
         </section>
 
