@@ -1,7 +1,7 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:playwright@1.52.0": "1.52.0"
+    "npm:playwright@1.61.0": "1.61.0"
   },
   "npm": {
     "fsevents@2.3.2": {
@@ -9,12 +9,12 @@
       "os": ["darwin"],
       "scripts": true
     },
-    "playwright-core@1.52.0": {
-      "integrity": "sha512-l2osTgLXSMeuLZOML9qYODUQoPPnUsKsb5/P6LJ2e6uPKXUdPK5WYhN4z03G+YNbWmGDY4YENauNu4ZKczreHg==",
+    "playwright-core@1.61.0": {
+      "integrity": "sha512-caX7TrY3Ml6egyDX0WUcTHDxodl/b51y5wJOdCEA36QviK/s2g081hvmGs8eaE3DWb6NYZQ6BjO/QkNRPenoPA==",
       "bin": true
     },
-    "playwright@1.52.0": {
-      "integrity": "sha512-JAwMNMBlxJ2oD1kce4KPtMkDeKGHQstdpFPcPH3maElAXon/QZeTvtsfXmTMRyO9TslfoYOXkSsvao2nE1ilTw==",
+    "playwright@1.61.0": {
+      "integrity": "sha512-Z+7BeeqQPRRzklHsVFP4KTGIyMxKUmfeRA4WisM6G3/XW6nwGeX6fX9qYaDa+CiUqpOkb2f6X3nar05R3kSuJQ==",
       "dependencies": [
         "playwright-core"
       ],
@@ -26,7 +26,7 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:playwright@1.52.0"
+      "npm:playwright@1.61.0"
     ]
   }
 }
