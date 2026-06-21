@@ -356,6 +356,53 @@ a {
   color: var(--muted);
 }
 
+.color-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+}
+
+.color-actions {
+  margin-top: 0.75rem;
+}
+
+.color-control {
+  align-items: center;
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+  padding: 0.55rem 0.65rem;
+}
+
+.color-control span,
+.stat-tile strong {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.4rem;
+}
+
+.color-control input[type="color"] {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 2rem;
+  padding: 0;
+  width: 2.35rem;
+}
+
+.resource-swatch {
+  background: var(--resource-color);
+  border: 1px solid rgb(17 24 39 / 42%);
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
 .stat-tile {
   background: var(--panel-soft);
   border: 1px solid var(--border);

@@ -92,6 +92,19 @@
         </section>
 
         <section class="panel">
+          <button class="section-toggle" data-section-toggle="colors">
+            <span>Resource Colors</span><span data-section-icon="colors">-</span>
+          </button>
+          <div id="section-colors" class="section-body">
+            <div id="resource-color-controls" class="color-grid"></div>
+            <div class="inline-actions color-actions">
+              <button id="reset-resource-colors-btn" class="secondary">Reset Defaults</button>
+            </div>
+            <p class="muted">Saved colors use localStorage and stay in this browser.</p>
+          </div>
+        </section>
+
+        <section class="panel">
           <button class="section-toggle" data-section-toggle="seed">
             <span>Seed & Share</span><span data-section-icon="seed">-</span>
           </button>

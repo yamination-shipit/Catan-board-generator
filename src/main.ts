@@ -36,7 +36,8 @@ import type {
 const HISTORY_KEY = "catan-board-seed-history";
 const PANEL_STATE_KEY = "catan-board-panel-state";
 const THEME_KEY = "catan-board-theme";
-const sections = ["setup", "seed", "rules", "history", "stats"] as const;
+const RESOURCE_COLORS_KEY = "catan-board-resource-colors";
+const sections = ["setup", "colors", "seed", "rules", "history", "stats"] as const;
 const resourceOrder: readonly Resource[] = [
   "wood",
   "brick",
@@ -52,13 +53,16 @@ let state: AppState;
 let seedHistory: readonly SeedHistoryEntry[] = [];
 let collapsedSections: Record<string, boolean> = {};
 let selectedResource: Resource | null = null;
+let resourceColors: Partial<Record<Resource, string>> = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   const parsed = parseShareSearch(globalThis.location.search);
   state = initialState(parsed.selection);
   seedHistory = loadJson(HISTORY_KEY, []);
   collapsedSections = loadJson(PANEL_STATE_KEY, {});
+  resourceColors = loadResourceColors();
   applyStoredTheme();
+  renderResourceColorControls();
   bindEvents();
   syncControlsFromState();
   renderPanelState();
@@ -85,6 +89,7 @@ function bindEvents(): void {
   byId("board-reset-zoom-btn").addEventListener("click", resetZoom);
   byId("theme-toggle-btn").addEventListener("click", toggleTheme);
   byId("collapse-all-btn").addEventListener("click", toggleAllSections);
+  byId("reset-resource-colors-btn").addEventListener("click", resetResourceColors);
   byId("share-history-btn").addEventListener("click", copySeedHistory);
   byId("clear-history-btn").addEventListener("click", clearSeedHistory);
   byId("variant-select").addEventListener("change", () => {
@@ -191,6 +196,7 @@ function renderBoard(view = state.boardView): void {
       challenges: view.selection.challenges,
       rulePreset: view.selection.rulePreset,
       ports: view.ports,
+      resourceColors,
     })
   }
       </div>
@@ -219,7 +225,9 @@ function renderStats(board = state.boardView?.board ?? []): void {
       const totals = stats[resource];
       if (!totals) return "";
       return `<button class="stat-tile" type="button" data-resource="${resource}">
-        <strong>${definition.name}</strong>
+        <strong><span class="resource-swatch" data-resource-swatch="${resource}" style="--resource-color: ${
+        resourceColor(resource)
+      }"></span>${definition.name}</strong>
         <span>${totals.count}x</span>
         <small>${totals.pips} pips</small>
       </button>`;
@@ -545,6 +553,83 @@ function renderPanelState(): void {
     : "Collapse";
 }
 
+function renderResourceColorControls(): void {
+  byId("resource-color-controls").innerHTML = resourceOrder
+    .map((resource) => {
+      const definition = RESOURCES[resource];
+      const color = resourceColor(resource);
+      return `<label class="color-control" for="resource-color-${resource}">
+        <span><span class="resource-swatch" data-resource-swatch="${resource}" style="--resource-color: ${color}"></span>${definition.name}</span>
+        <input type="color" id="resource-color-${resource}" data-resource-color="${resource}" value="${color}" aria-label="${definition.name} color">
+      </label>`;
+    }).join("");
+
+  byId("resource-color-controls")
+    .querySelectorAll<HTMLInputElement>("[data-resource-color]")
+    .forEach((input) => {
+      input.addEventListener("input", () => {
+        const resource = input.dataset.resourceColor;
+        if (isResource(resource)) setResourceColor(resource, input.value);
+      });
+    });
+}
+
+function setResourceColor(resource: Resource, color: string): void {
+  if (!isHexColor(color)) return;
+  const nextColor = normalizeHexColor(color);
+  if (resourceColors[resource] === nextColor) return;
+  resourceColors = { ...resourceColors, [resource]: nextColor };
+  saveJson(RESOURCE_COLORS_KEY, resourceColors);
+  updateResourceColorSwatches(resource);
+  renderBoard(state.boardView);
+  renderStats();
+}
+
+function resetResourceColors(): void {
+  resourceColors = {};
+  removeStoredJson(RESOURCE_COLORS_KEY);
+  renderResourceColorControls();
+  renderBoard(state.boardView);
+  renderStats();
+  showNotification("Resource colors reset.");
+}
+
+function loadResourceColors(): Partial<Record<Resource, string>> {
+  const stored = loadJson<unknown>(RESOURCE_COLORS_KEY, {});
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
+  const values = stored as Record<string, unknown>;
+  return resourceOrder.reduce<Partial<Record<Resource, string>>>((colors, resource) => {
+    const color = values[resource];
+    return typeof color === "string" && isHexColor(color)
+      ? { ...colors, [resource]: normalizeHexColor(color) }
+      : colors;
+  }, {});
+}
+
+function resourceColor(resource: Resource): string {
+  return resourceColors[resource] ?? RESOURCES[resource].color;
+}
+
+function updateResourceColorSwatches(resource: Resource): void {
+  document.querySelectorAll<HTMLElement>(`[data-resource-swatch="${resource}"]`).forEach(
+    (swatch) => {
+      swatch.style.setProperty("--resource-color", resourceColor(resource));
+    },
+  );
+}
+
+function isResource(value: string | undefined): value is Resource {
+  return resourceOrder.some((resource) => resource === value);
+}
+
+function isHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+function normalizeHexColor(value: string): string {
+  return value.toLowerCase();
+}
+
 function toggleResourceHighlight(resource: Resource): void {
   selectedResource = selectedResource === resource ? null : resource;
   applyResourceHighlight();
@@ -812,6 +897,14 @@ function loadJson<T>(key: string, fallback: T): T {
 function saveJson(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    showNotification("Local saving is unavailable in this browser.");
+  }
+}
+
+function removeStoredJson(key: string): void {
+  try {
+    localStorage.removeItem(key);
   } catch {
     showNotification("Local saving is unavailable in this browser.");
   }

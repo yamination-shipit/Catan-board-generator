@@ -1,4 +1,4 @@
-import type { Challenge, Hex, Mode, Port, RulePreset, Variant } from "../types.ts";
+import type { Challenge, Hex, Mode, Port, Resource, RulePreset, Variant } from "../types.ts";
 import { getGhostSettlements } from "../domain/options.ts";
 import { RESOURCES, RULE_PRESETS } from "../domain/rules.ts";
 import { pipsForNumber } from "../domain/board.ts";
@@ -11,6 +11,7 @@ export function renderBoardSvg(input: {
   readonly challenges: readonly Challenge[];
   readonly rulePreset: RulePreset;
   readonly ports: readonly Port[];
+  readonly resourceColors?: Partial<Record<Resource, string>>;
 }): string {
   const hexSize = 60;
   const hexWidth = hexSize * Math.sqrt(3);
@@ -39,7 +40,9 @@ export function renderBoardSvg(input: {
   const water = waterHexPositions.map((hex) =>
     renderWaterHex(hex.q, hex.r, hexSize, offsetX, offsetY)
   ).join("");
-  const land = input.board.map((hex) => renderHex(center(hex), hexSize, hex)).join("");
+  const land = input.board.map((hex) =>
+    renderHex(center(hex), hexSize, hex, input.resourceColors ?? {})
+  ).join("");
   const ports = renderPorts(input.board, hexSize, center, input.ports);
   const ghosts = input.mode === "2"
     ? renderGhostSettlements(
@@ -87,20 +90,32 @@ function renderWaterHex(
   return `<polygon points="${points}" fill="#3b7dd8" stroke="#2a5a9e" stroke-width="1.5" opacity="0.5"/>`;
 }
 
-function renderHex(center: Point, size: number, hex: Hex): string {
+function renderHex(
+  center: Point,
+  size: number,
+  hex: Hex,
+  resourceColors: Partial<Record<Resource, string>>,
+): string {
   const resource = RESOURCES[hex.resource];
+  const tileColor = normalizeHexColor(resourceColors[hex.resource]) ?? resource.color;
+  const tileTextColor = contrastTextColor(tileColor);
   const number = hex.number;
   const pips = pipsForNumber(number);
-  const token = number === null ? "" : renderNumberToken(center, number, pips);
+  const token = number === null ? "" : renderNumberToken(center, number, pips, tileTextColor);
   return `<g class="hex resource-${hex.resource}" data-resource="${hex.resource}" tabindex="0"><polygon class="hex-fill" points="${
     hexPoints(center.x, center.y, size)
-  }" fill="${resource.color}" stroke="#263238" stroke-width="2" opacity="0.92"/>
+  }" fill="${tileColor}" stroke="#263238" stroke-width="2" opacity="0.92"/>
 <text x="${center.x}" y="${
     center.y - 12
-  }" text-anchor="middle" font-size="13" fill="#111827" font-weight="700">${resource.shortLabel}</text>${token}</g>`;
+  }" text-anchor="middle" font-size="13" fill="${tileTextColor}" font-weight="700">${resource.shortLabel}</text>${token}</g>`;
 }
 
-function renderNumberToken(center: Point, number: number, pips: number): string {
+function renderNumberToken(
+  center: Point,
+  number: number,
+  pips: number,
+  pipTextColor: string,
+): string {
   const isRed = number === 6 || number === 8;
   const tokenColor = isRed ? "#dc2626" : "#f3f4f6";
   const textColor = isRed ? "#ffffff" : "#1f2937";
@@ -112,9 +127,44 @@ function renderNumberToken(center: Point, number: number, pips: number): string 
   }" text-anchor="middle" font-size="18" font-weight="700" fill="${textColor}" dominant-baseline="middle">${number}</text>
 <text x="${center.x}" y="${
     center.y + 35
-  }" text-anchor="middle" font-size="10" fill="#4b5563" dominant-baseline="middle">${
+  }" text-anchor="middle" font-size="10" fill="${pipTextColor}" dominant-baseline="middle">${
     "*".repeat(pips)
   }</text>`;
+}
+
+function normalizeHexColor(color: string | undefined): string | null {
+  return color && /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : null;
+}
+
+function contrastTextColor(background: string): "#111827" | "#f9fafb" {
+  const parsed = parseHexColor(background);
+  if (!parsed) return "#111827";
+  const luminance = relativeLuminance(parsed);
+  return luminance > 0.45 ? "#111827" : "#f9fafb";
+}
+
+function parseHexColor(
+  color: string,
+): { readonly red: number; readonly green: number; readonly blue: number } | null {
+  const normalized = normalizeHexColor(color);
+  if (!normalized) return null;
+  return {
+    red: Number.parseInt(normalized.slice(1, 3), 16),
+    green: Number.parseInt(normalized.slice(3, 5), 16),
+    blue: Number.parseInt(normalized.slice(5, 7), 16),
+  };
+}
+
+function relativeLuminance(color: {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+}): number {
+  const [red, green, blue] = [color.red, color.green, color.blue].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * (red ?? 0) + 0.7152 * (green ?? 0) + 0.0722 * (blue ?? 0);
 }
 
 function renderPorts(
