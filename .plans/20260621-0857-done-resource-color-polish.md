@@ -5,7 +5,7 @@
 Add reset-to-defaults for browser resource colors and make board labels adapt to custom color
 contrast.
 
-## Plan
+## Completed
 
 - Add a Reset Defaults button in the Resource Colors panel.
 - Clear `catan-board-resource-colors`, reset all color inputs, and repaint the current board/stats.
@@ -15,10 +15,10 @@ contrast.
 
 ## Validation
 
-- Pending: `just check`
-- Pending: `just test`
-- Pending: `just test-honeycomb`
-- Pending: `just ci`
+- Passed: `just check`
+- Passed: `just test`
+- Passed: `just test-honeycomb`
+- Passed: `just ci`
 
 ## Risks
 

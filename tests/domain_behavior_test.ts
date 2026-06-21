@@ -180,6 +180,50 @@ Deno.test("renderBoardSvg_WhenResourceColorsAreProvided_UsesColorOverrides", () 
   assert.ok(svg.includes('fill="#123abc"'));
 });
 
+Deno.test("renderBoardSvg_WhenTileColorIsDark_UsesLightResourceText", () => {
+  // Arrange
+  const board: readonly Hex[] = [
+    { row: 0, col: 0, q: 0, r: 0, resource: "wheat", number: 5 },
+  ];
+
+  // Act
+  const svg = renderBoardSvg({
+    board,
+    mode: "3-4",
+    variant: "full-neutral",
+    challenges: [],
+    rulePreset: "balanced-neutral",
+    ports: [],
+    resourceColors: { wheat: "#111111" },
+  });
+
+  // Assert
+  assert.ok(svg.includes('fill="#f9fafb" font-weight="700">Wheat</text>'));
+  assert.ok(svg.includes('fill="#f9fafb" dominant-baseline="middle">****</text>'));
+});
+
+Deno.test("renderBoardSvg_WhenTileColorIsLight_UsesDarkResourceText", () => {
+  // Arrange
+  const board: readonly Hex[] = [
+    { row: 0, col: 0, q: 0, r: 0, resource: "wheat", number: 5 },
+  ];
+
+  // Act
+  const svg = renderBoardSvg({
+    board,
+    mode: "3-4",
+    variant: "full-neutral",
+    challenges: [],
+    rulePreset: "balanced-neutral",
+    ports: [],
+    resourceColors: { wheat: "#f4c430" },
+  });
+
+  // Assert
+  assert.ok(svg.includes('fill="#111827" font-weight="700">Wheat</text>'));
+  assert.ok(svg.includes('fill="#111827" dominant-baseline="middle">****</text>'));
+});
+
 Deno.test("createShareUrl_WhenChallengesAreEmpty_RemovesChallengeParameter", () => {
   // Arrange
   const currentUrl =

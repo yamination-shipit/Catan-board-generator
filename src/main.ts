@@ -89,6 +89,7 @@ function bindEvents(): void {
   byId("board-reset-zoom-btn").addEventListener("click", resetZoom);
   byId("theme-toggle-btn").addEventListener("click", toggleTheme);
   byId("collapse-all-btn").addEventListener("click", toggleAllSections);
+  byId("reset-resource-colors-btn").addEventListener("click", resetResourceColors);
   byId("share-history-btn").addEventListener("click", copySeedHistory);
   byId("clear-history-btn").addEventListener("click", clearSeedHistory);
   byId("variant-select").addEventListener("change", () => {
@@ -584,6 +585,15 @@ function setResourceColor(resource: Resource, color: string): void {
   renderStats();
 }
 
+function resetResourceColors(): void {
+  resourceColors = {};
+  removeStoredJson(RESOURCE_COLORS_KEY);
+  renderResourceColorControls();
+  renderBoard(state.boardView);
+  renderStats();
+  showNotification("Resource colors reset.");
+}
+
 function loadResourceColors(): Partial<Record<Resource, string>> {
   const stored = loadJson<unknown>(RESOURCE_COLORS_KEY, {});
   if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
@@ -887,6 +897,14 @@ function loadJson<T>(key: string, fallback: T): T {
 function saveJson(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    showNotification("Local saving is unavailable in this browser.");
+  }
+}
+
+function removeStoredJson(key: string): void {
+  try {
+    localStorage.removeItem(key);
   } catch {
     showNotification("Local saving is unavailable in this browser.");
   }

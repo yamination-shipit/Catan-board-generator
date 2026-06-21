@@ -362,6 +362,10 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
+.color-actions {
+  margin-top: 0.75rem;
+}
+
 .color-control {
   align-items: center;
   background: var(--panel-soft);

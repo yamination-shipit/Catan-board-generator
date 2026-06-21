@@ -181,6 +181,10 @@ async function assertResourceColorPreferencesPersist(page: Page): Promise<void> 
     await page.locator('.hex[data-resource="wheat"] .hex-fill').first().getAttribute("fill"),
     customWheat,
   );
+  assert.equal(
+    await page.locator('.hex[data-resource="wheat"] text').first().getAttribute("fill"),
+    "#f9fafb",
+  );
 
   await page.locator("#copy-url-btn").click();
   const copiedText = await page.evaluate(() =>
@@ -197,6 +201,22 @@ async function assertResourceColorPreferencesPersist(page: Page): Promise<void> 
     await page.locator('.hex[data-resource="wheat"] .hex-fill').first().getAttribute("fill"),
     customWheat,
   );
+
+  await page.locator("#reset-resource-colors-btn").click();
+  await page.waitForFunction(() => localStorage.getItem("catan-board-resource-colors") === null);
+  assert.equal(await page.locator("#resource-color-wheat").inputValue(), "#f4c430");
+  assert.equal(
+    await page.locator('.hex[data-resource="wheat"] .hex-fill').first().getAttribute("fill"),
+    "#f4c430",
+  );
+  assert.equal(
+    await page.locator('.hex[data-resource="wheat"] text').first().getAttribute("fill"),
+    "#111827",
+  );
+
+  await page.reload();
+  await page.waitForSelector("#board-svg");
+  assert.equal(await page.locator("#resource-color-wheat").inputValue(), "#f4c430");
 }
 
 async function assertResourceHighlightingWorks(page: Page): Promise<void> {
