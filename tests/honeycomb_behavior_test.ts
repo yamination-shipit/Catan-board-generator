@@ -35,6 +35,8 @@ Deno.test({
       await assertBoardFits(page);
       await assertPointerPanMovesBoard(page);
       await assertTopCopyUsesFullUrl(page);
+      await assertSeedPanelCopyUsesFullUrl(page);
+      await assertFaviconUsesSeedColor(page);
       await assertResourceColorPreferencesPersist(page);
       await assertResourceHighlightingWorks(page);
       await assertPortHighlightingWorks(page);
@@ -165,6 +167,29 @@ async function assertTopCopyUsesFullUrl(page: Page): Promise<void> {
     (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText
   );
   assert.equal(copiedText, page.url());
+}
+
+async function assertSeedPanelCopyUsesFullUrl(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    delete (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText;
+  });
+  await page.locator("#copy-share-link-btn").click();
+  await page.waitForFunction(() =>
+    Boolean((globalThis as typeof globalThis & { __copiedText?: string }).__copiedText)
+  );
+  const copiedText = await page.evaluate(() =>
+    (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText
+  );
+  assert.equal(copiedText, page.url());
+}
+
+async function assertFaviconUsesSeedColor(page: Page): Promise<void> {
+  const href = await page.locator("#seed-favicon").getAttribute("href");
+  assert.ok(href);
+  assert.ok(href.startsWith("data:image/svg+xml,"));
+  const decoded = decodeURIComponent(href.replace("data:image/svg+xml,", ""));
+  assert.match(decoded, /fill="#[0-9a-f]{6}"/);
+  assert.ok(decoded.includes("<svg"));
 }
 
 async function assertResourceColorPreferencesPersist(page: Page): Promise<void> {

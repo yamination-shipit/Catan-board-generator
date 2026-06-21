@@ -1,4 +1,5 @@
 import type {
+  BalanceProfile,
   Challenge,
   Expansion,
   GenerationOptions,
@@ -33,6 +34,7 @@ export const defaultSelection: GenerationSelection = {
   challenges: [],
   expansions: [],
   rulePreset: "balanced-neutral",
+  balanceProfile: "classic",
 };
 
 export function normalizeMode(value: string | null): Mode {
@@ -65,6 +67,11 @@ export function normalizeRulePreset(value: string | null): RulePreset {
   return presets.includes(value as RulePreset) ? value as RulePreset : "balanced-neutral";
 }
 
+export function normalizeBalanceProfile(value: string | null): BalanceProfile {
+  const profiles: readonly BalanceProfile[] = ["classic", "strict", "wild"];
+  return profiles.includes(value as BalanceProfile) ? value as BalanceProfile : "classic";
+}
+
 export function getGenerationOptions(
   seed: string,
   selection: GenerationSelection,
@@ -87,6 +94,7 @@ export function getGenerationOptions(
     challenges: [...selection.challenges],
     expansions: [...selection.expansions],
     rulePreset: selection.rulePreset,
+    balanceProfile: selection.balanceProfile,
     scarceResource,
   };
 }

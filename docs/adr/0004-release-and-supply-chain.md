@@ -14,6 +14,10 @@ Use Conventional Commits with Release Please for changelogs, release PRs, tags, 
 Use Renovate with cooldowns, no automerge, and grouped GitHub Actions updates. Avoid production
 dependencies unless a clear need exists.
 
+PR titles must use lowercase Conventional Commit prefixes. Generated branch-style titles are not
+accepted because Release Please uses commit history to decide whether a release is needed. Changelog
+sections are limited to `feat`, `fix`, and `perf` entries.
+
 ## Consequences
 
 - The page footer reads its version from the Release Please manifest.

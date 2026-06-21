@@ -4,15 +4,31 @@ import { getGhostSettlements } from "./options.ts";
 
 export function evaluateBoard(board: readonly Hex[], options: GenerationOptions): number {
   let score = 1;
-  score -= countAdjacentHighNumbers(board) * 0.3;
-  score -= calculatePipBalance(board) * 0.2;
-  score += calculateResourceDiversity(board) * 0.1;
+  const weights = scoreWeightsForProfile(options);
+  score -= countAdjacentHighNumbers(board) * weights.highNumbers;
+  score -= calculatePipBalance(board) * weights.pipBalance;
+  score += calculateResourceDiversity(board) * weights.diversity;
 
   if (options.scarceResource) {
-    score += calculateScarcityChallengeScore(board, options.scarceResource) * 0.2;
+    score += calculateScarcityChallengeScore(board, options.scarceResource) * weights.scarcity;
   }
 
   return score;
+}
+
+function scoreWeightsForProfile(options: GenerationOptions): {
+  readonly highNumbers: number;
+  readonly pipBalance: number;
+  readonly diversity: number;
+  readonly scarcity: number;
+} {
+  if (options.balanceProfile === "strict") {
+    return { highNumbers: 0.42, pipBalance: 0.32, diversity: 0.14, scarcity: 0.26 };
+  }
+  if (options.balanceProfile === "wild") {
+    return { highNumbers: 0.18, pipBalance: 0.1, diversity: 0.05, scarcity: 0.12 };
+  }
+  return { highNumbers: 0.3, pipBalance: 0.2, diversity: 0.1, scarcity: 0.2 };
 }
 
 export function calculateDifficultyRating(
