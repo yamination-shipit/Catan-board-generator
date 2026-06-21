@@ -4,6 +4,8 @@ import { getGhostSettlements, getPortsForOptions } from "../src/domain/options.t
 import { getGenerationOptions } from "../src/domain/options.ts";
 import { createShareUrl, parseShareSearch } from "../src/domain/share-url.ts";
 import { upsertSeedHistory } from "../src/domain/history.ts";
+import { createBoardQualityNotes } from "../src/domain/quality.ts";
+import { seedToHexColor } from "../src/domain/seed-color.ts";
 import {
   calculatePipBalance,
   countAdjacentHighNumbers,
@@ -79,6 +81,7 @@ Deno.test("evaluateBoard_WhenHighNumbersTouch_ReducesTheScore", () => {
     challenges: [],
     expansions: [],
     rulePreset: "balanced-neutral",
+    balanceProfile: "classic",
   });
   const separatedBoard = baseBoard.map((hex) =>
     hex.q === 1 && hex.r === 0 ? { ...hex, number: 4 } : hex
@@ -125,6 +128,7 @@ Deno.test("getPortsForOptions_WhenHarborsChallengeIsEnabled_ShufflesDeterministi
     challenges: ["harbors"],
     expansions: [],
     rulePreset: "balanced-neutral",
+    balanceProfile: "classic",
   });
 
   // Act
@@ -288,19 +292,20 @@ Deno.test("createShareUrl_WhenExpansionsAreSelected_PreservesThemOutsideTheSeed"
     challenges: [],
     expansions: ["seafarers", "cities-knights"],
     rulePreset: "long-game",
+    balanceProfile: "strict",
   });
 
   // Assert
   assert.equal(
     url,
-    "https://example.test/?seed=fresh&mode=2&variant=compact-tight&expansions=seafarers%2Ccities-knights&rules=long-game",
+    "https://example.test/?seed=fresh&mode=2&variant=compact-tight&expansions=seafarers%2Ccities-knights&rules=long-game&balance=strict",
   );
 });
 
 Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults", () => {
   // Arrange
   const search =
-    "?seed=abc&mode=bogus&variant=unknown&challenges=scarce,bad,neutral&expansions=seafarers,bad,seafarers&rules=unknown";
+    "?seed=abc&mode=bogus&variant=unknown&challenges=scarce,bad,neutral&expansions=seafarers,bad,seafarers&rules=unknown&balance=bad";
 
   // Act
   const parsed = parseShareSearch(search);
@@ -314,8 +319,32 @@ Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults
       challenges: ["scarce", "neutral"],
       expansions: ["seafarers"],
       rulePreset: "balanced-neutral",
+      balanceProfile: "classic",
     },
   });
+});
+
+Deno.test("createShareUrl_WhenBalanceIsClassic_RemovesStaleBalanceParameter", () => {
+  // Arrange
+  const currentUrl = "https://example.test/?seed=old&balance=wild";
+
+  // Act
+  const url = createShareUrl(currentUrl, "fresh", selection());
+
+  // Assert
+  assert.equal(url, "https://example.test/?seed=fresh&mode=3-4");
+});
+
+Deno.test("seedToHexColor_WhenSeedChanges_ReturnsStableHexColors", () => {
+  // Arrange / Act
+  const first = seedToHexColor("docs-seed");
+  const repeated = seedToHexColor("docs-seed");
+  const second = seedToHexColor("other-seed");
+
+  // Assert
+  assert.match(first, /^#[0-9a-f]{6}$/);
+  assert.equal(first, repeated);
+  assert.notEqual(first, second);
 });
 
 Deno.test("upsertSeedHistory_WhenDuplicateBoardChoiceIsSaved_MovesItToTheFront", () => {
@@ -332,6 +361,23 @@ Deno.test("upsertSeedHistory_WhenDuplicateBoardChoiceIsSaved_MovesItToTheFront",
   // Assert
   assert.equal(history.length, 2);
   assert.deepEqual(history[0], replacement);
+});
+
+Deno.test("upsertSeedHistory_WhenBalanceProfileDiffers_KeepsBothChoices", () => {
+  // Arrange
+  const existing: readonly SeedHistoryEntry[] = [historyEntry("same", "3-4", [])];
+  const replacement: SeedHistoryEntry = {
+    ...historyEntry("same", "3-4", [], "2026-06-13T13:00:00.000Z"),
+    balanceProfile: "strict",
+  };
+
+  // Act
+  const history = upsertSeedHistory(existing, replacement);
+
+  // Assert
+  assert.equal(history.length, 2);
+  assert.equal(history[0]?.balanceProfile, "strict");
+  assert.equal(history[1]?.balanceProfile, undefined);
 });
 
 Deno.test("summarizeBoard_WhenUsingKnownSeed_MatchesDocumentationSnapshot", () => {
@@ -364,6 +410,25 @@ Deno.test("summarizeBoard_WhenUsingKnownSeed_MatchesDocumentationSnapshot", () =
     "4:2:ore:5",
   ]);
   assert.deepEqual(view.difficulty, { level: 2, label: "Standard", score: 1.62 });
+});
+
+Deno.test("createBoardQualityNotes_WhenBoardIsGenerated_ExplainsBalanceSignals", () => {
+  // Arrange
+  const view = createBoardView("docs-seed", selection({ balanceProfile: "strict" }));
+
+  // Act
+  const notes = createBoardQualityNotes({
+    board: view.board,
+    mode: view.selection.mode,
+    options: view.options,
+    ports: view.ports,
+    difficulty: view.difficulty,
+  });
+
+  // Assert
+  assert.ok(notes.some((note) => note.label === "Strict balance"));
+  assert.ok(notes.some((note) => note.label.includes("numbers")));
+  assert.ok(notes.every((note) => note.detail.length > 0));
 });
 
 Deno.test("renderBoardSvg_WhenUsingCompactChallengeSeed_MatchesStableSnapshotShape", () => {
@@ -517,6 +582,7 @@ function selection(overrides: Partial<GenerationSelection> = {}): GenerationSele
     challenges: [],
     expansions: [],
     rulePreset: "balanced-neutral",
+    balanceProfile: "classic",
     ...overrides,
   };
 }

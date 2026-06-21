@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catan Board Generator</title>
+    <link
+      id="seed-favicon"
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23047857' d='M32 3 57 17.5v29L32 61 7 46.5v-29z'/%3E%3Cpath fill='none' stroke='white' stroke-width='5' d='M32 11 50 21.5v21L32 53 14 42.5v-21z'/%3E%3C/svg%3E"
+    >
     <link rel="stylesheet" href="./assets/app.css">
   </head>
   <body>
@@ -31,7 +36,7 @@
               <button id="fullscreen-btn">Fullscreen</button>
               <button id="board-reset-zoom-btn">Reset Zoom</button>
               <button id="clear-selection-btn">Clear Selection</button>
-              <button id="copy-url-btn">Copy URL</button>
+              <button id="copy-url-btn">Copy Link</button>
             </div>
           </div>
           <div id="board-container" class="board-container">
@@ -71,6 +76,14 @@
                   <option value="long-game">Long game</option>
                 </select>
                 <p id="rules-note" class="control-note">Only affects 2-player setup notes.</p>
+              </div>
+              <div>
+                <label for="balance-profile-select">Balance Profile</label>
+                <select id="balance-profile-select">
+                  <option value="classic">Classic balance</option>
+                  <option value="strict">Strict balance</option>
+                  <option value="wild">Wild balance</option>
+                </select>
               </div>
             </div>
             <div class="challenge-grid">
@@ -116,6 +129,7 @@
               <button id="load-seed-btn">Load Seed</button>
             </div>
             <div class="inline-actions seed-actions">
+              <button id="copy-share-link-btn" class="primary">Copy Link</button>
               <button id="copy-seed-btn">Copy Seed</button>
             </div>
             <p class="muted">Saved history uses localStorage and stays in this browser.</p>
@@ -150,6 +164,7 @@
           </button>
           <div id="section-stats" class="section-body">
             <div id="stats" class="stats-grid"></div>
+            <div id="quality-notes" class="quality-grid"></div>
             <div class="rules">
               <p><strong>Balancing rules:</strong></p>
               <ul>

@@ -15,5 +15,8 @@ function isSameBoardChoice(left: SeedHistoryEntry, right: SeedHistoryEntry): boo
   return left.seed === right.seed &&
     left.mode === right.mode &&
     left.variant === right.variant &&
-    left.challenges.join(",") === right.challenges.join(",");
+    left.challenges.join(",") === right.challenges.join(",") &&
+    (left.expansions ?? []).join(",") === (right.expansions ?? []).join(",") &&
+    (left.rulePreset ?? "balanced-neutral") === (right.rulePreset ?? "balanced-neutral") &&
+    (left.balanceProfile ?? "classic") === (right.balanceProfile ?? "classic");
 }

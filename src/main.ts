@@ -1,6 +1,7 @@
 import type { AppState } from "./app/app-state.ts";
 import {
   initialState,
+  withBalanceProfile,
   withBoard,
   withChallenges,
   withExpansions,
@@ -20,10 +21,13 @@ import {
 } from "./domain/rules.ts";
 import { pipsForNumber } from "./domain/board.ts";
 import { getGhostSettlements } from "./domain/options.ts";
+import { createBoardQualityNotes } from "./domain/quality.ts";
+import { seedToHexColor } from "./domain/seed-color.ts";
 import { createShareUrl, parseShareSearch } from "./domain/share-url.ts";
 import { upsertSeedHistory } from "./domain/history.ts";
 import { renderBoardSvg } from "./rendering/svg.ts";
 import type {
+  BalanceProfile,
   Challenge,
   Expansion,
   Mode,
@@ -90,6 +94,7 @@ function bindEvents(): void {
     () => copyText(state.boardView?.seed ?? "", "Seed copied."),
   );
   byId("copy-url-btn").addEventListener("click", copyCurrentUrl);
+  byId("copy-share-link-btn").addEventListener("click", copyCurrentUrl);
   byId("fullscreen-btn").addEventListener("click", toggleFullscreen);
   byId("board-reset-zoom-btn").addEventListener("click", resetZoom);
   byId("clear-selection-btn").addEventListener("click", clearMapSelection);
@@ -104,6 +109,10 @@ function bindEvents(): void {
   });
   byId("rule-preset-select").addEventListener("change", () => {
     state = withRulePreset(state, selectValue("rule-preset-select") as RulePreset);
+    refreshCurrentBoard();
+  });
+  byId("balance-profile-select").addEventListener("change", () => {
+    state = withBalanceProfile(state, selectValue("balance-profile-select") as BalanceProfile);
     refreshCurrentBoard();
   });
   ["challenge-scarce", "challenge-harbors", "challenge-neutral"].forEach((id) => {
@@ -160,9 +169,11 @@ function generateBoard(seed: string, saveHistory: boolean): void {
   setInputValue("seed-input", view.seed);
   renderBoard(view);
   renderStats(view.board);
+  renderQualityNotes();
   renderDifficulty();
   renderCurrentSeed();
   renderRulesAndSetup();
+  updateSeedFavicon(view.seed);
   globalThis.history.pushState(
     {},
     "",
@@ -177,6 +188,7 @@ function generateBoard(seed: string, saveHistory: boolean): void {
       challenges: view.selection.challenges,
       expansions: view.selection.expansions,
       rulePreset: view.selection.rulePreset,
+      balanceProfile: view.selection.balanceProfile,
       difficulty: view.difficulty,
       createdAt: new Date().toISOString(),
     });
@@ -211,6 +223,27 @@ function renderBoard(view = state.boardView): void {
   `;
   initZoom();
   applyMapSelection();
+}
+
+function renderQualityNotes(): void {
+  const view = state.boardView;
+  const container = byId("quality-notes");
+  if (!view) {
+    container.replaceChildren();
+    return;
+  }
+  container.innerHTML = createBoardQualityNotes({
+    board: view.board,
+    mode: view.selection.mode,
+    options: view.options,
+    ports: view.ports,
+    difficulty: view.difficulty,
+  }).map((note) =>
+    `<div class="quality-note quality-note-${note.tone}">
+      <strong>${note.label}</strong>
+      <span>${note.detail}</span>
+    </div>`
+  ).join("");
 }
 
 function renderStats(board = state.boardView?.board ?? []): void {
@@ -284,6 +317,9 @@ function renderCurrentSeed(): void {
   }
   if (view.selection.mode === "2") {
     parts.push(`Rules: ${RULE_PRESET_NAMES[view.selection.rulePreset]}`);
+  }
+  if (view.selection.balanceProfile !== "classic") {
+    parts.push(`Balance: ${view.selection.balanceProfile}`);
   }
   if (view.options.scarceResource) {
     parts.push(`Scarce: ${RESOURCES[view.options.scarceResource].name}`);
@@ -410,6 +446,9 @@ function renderSeedHistory(): void {
     const difficultyText = entry.difficulty
       ? ` | Difficulty ${entry.difficulty.level}/5 ${entry.difficulty.label}`
       : "";
+    const balanceText = entry.balanceProfile && entry.balanceProfile !== "classic"
+      ? ` | ${entry.balanceProfile} balance`
+      : "";
 
     const button = document.createElement("button");
     button.className = "history-item";
@@ -421,7 +460,7 @@ function renderSeedHistory(): void {
     const detail = document.createElement("small");
     detail.textContent = `${entry.mode === "2" ? "2 Players" : "3-4 Players"} | ${
       VARIANT_NAMES[entry.variant]
-    }${ruleText}${challengeText}${expansionText}${difficultyText}`;
+    }${ruleText}${challengeText}${expansionText}${balanceText}${difficultyText}`;
 
     button.append(seedSpan, detail);
     list.appendChild(button);
@@ -440,6 +479,7 @@ function restoreSeedHistory(index: number): void {
     challenges: entry.challenges,
     expansions: entry.expansions ?? [],
     rulePreset: entry.rulePreset ?? "balanced-neutral",
+    balanceProfile: entry.balanceProfile ?? "classic",
   });
   syncControlsFromState();
   generateBoard(entry.seed, true);
@@ -474,6 +514,7 @@ function copySeedHistory(): void {
         (entry.expansions ?? []).map((expansion) => EXPANSION_NAMES[expansion]).join(", ") ||
         "None"
       }`,
+      `Balance: ${entry.balanceProfile ?? "classic"}`,
       difficulty,
       `Saved: ${entry.createdAt}`,
       `URL: ${
@@ -483,6 +524,7 @@ function copySeedHistory(): void {
           challenges: entry.challenges,
           expansions: entry.expansions ?? [],
           rulePreset: entry.rulePreset ?? "balanced-neutral",
+          balanceProfile: entry.balanceProfile ?? "classic",
         })
       }`,
     ].join("\n");
@@ -530,6 +572,7 @@ function syncControlsFromState(): void {
     : "Disabled in 3-4 player mode.";
   setSelectValue("variant-select", state.selection.variant);
   setSelectValue("rule-preset-select", state.selection.rulePreset);
+  setSelectValue("balance-profile-select", state.selection.balanceProfile);
   setChecked("challenge-scarce", state.selection.challenges.includes("scarce"));
   setChecked("challenge-harbors", state.selection.challenges.includes("harbors"));
   setChecked("challenge-neutral", state.selection.challenges.includes("neutral"));
@@ -537,6 +580,14 @@ function syncControlsFromState(): void {
   setChecked("expansion-seafarers", state.selection.expansions.includes("seafarers"));
   setChecked("expansion-cities-knights", state.selection.expansions.includes("cities-knights"));
   renderRulesAndSetup();
+}
+
+function updateSeedFavicon(seed: string): void {
+  const color = seedToHexColor(seed);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="${color}" d="M32 3 57 17.5v29L32 61 7 46.5v-29z"/><path fill="none" stroke="white" stroke-width="5" d="M32 11 50 21.5v21L32 53 14 42.5v-21z"/></svg>`;
+  const favicon = document.querySelector<HTMLLinkElement>("#seed-favicon");
+  if (favicon) favicon.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function readChallenges(): readonly Challenge[] {

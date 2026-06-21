@@ -4,6 +4,7 @@ export type LayoutKey = Mode | "compact" | "5-6" | "seafarers";
 export type Challenge = "scarce" | "harbors" | "neutral";
 export type Expansion = "five-six-players" | "seafarers" | "cities-knights";
 export type RulePreset = "balanced-neutral" | "open-duel" | "long-game";
+export type BalanceProfile = "classic" | "strict" | "wild";
 export type Variant =
   | "full-neutral"
   | "full-open"
@@ -50,6 +51,7 @@ export interface GenerationSelection {
   readonly challenges: readonly Challenge[];
   readonly expansions: readonly Expansion[];
   readonly rulePreset: RulePreset;
+  readonly balanceProfile: BalanceProfile;
 }
 
 export interface GenerationOptions {
@@ -59,6 +61,7 @@ export interface GenerationOptions {
   readonly challenges: readonly Challenge[];
   readonly expansions: readonly Expansion[];
   readonly rulePreset: RulePreset;
+  readonly balanceProfile: BalanceProfile;
   readonly scarceResource: Resource | null;
 }
 
@@ -66,6 +69,12 @@ export interface DifficultyRating {
   readonly level: 1 | 2 | 3 | 4 | 5;
   readonly label: "Easy" | "Standard" | "Tricky" | "Hard" | "Brutal";
   readonly score: number;
+}
+
+export interface BoardQualityNote {
+  readonly label: string;
+  readonly detail: string;
+  readonly tone: "good" | "watch" | "hard";
 }
 
 export interface BoardView {
@@ -84,6 +93,7 @@ export interface SeedHistoryEntry {
   readonly challenges: readonly Challenge[];
   readonly expansions?: readonly Expansion[];
   readonly rulePreset?: RulePreset;
+  readonly balanceProfile?: BalanceProfile;
   readonly difficulty: DifficultyRating | null;
   readonly createdAt: string;
 }

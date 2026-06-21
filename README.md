@@ -19,12 +19,15 @@ The generator uses intelligent algorithms to create balanced boards:
 - ✅ Balanced pip counts (probability distribution)
 - ✅ Resource diversity in neighborhoods
 - ✅ Per-board difficulty rating from 1-5
+- ✅ Classic, strict, and wild balance profiles
+- ✅ Board-quality notes explaining balance pressure
 
 ### Seed System
 
 - Generate boards with seeds for reproducibility
 - Share specific boards with friends via URL
-- Copy seed or full URL to clipboard
+- Copy full board links by default, with seed-only copy kept as a secondary option
+- Change the favicon color deterministically from the active seed
 - Save seed history locally in browser localStorage
 - Copy/export all saved history entries with share URLs and metadata
 - Toggle expansion choices in share URLs; 5-6 and Seafarers now change generated boards
@@ -84,6 +87,14 @@ Expansion toggles are shareable and saved in local history:
 
 Expansion URLs generated before ADR 0006 may produce different boards now that expansion toggles
 affect generation.
+
+### Balance Profiles
+
+Balance profiles are shareable through the `balance` URL parameter:
+
+- **Classic balance**: current default generator behavior for existing links
+- **Strict balance**: searches more candidate boards and weighs fairness more heavily
+- **Wild balance**: allows swingier boards while staying deterministic for the seed
 
 ## Live Demo
 

@@ -1,6 +1,7 @@
 import type { GenerationSelection } from "../types.ts";
 import {
   defaultSelection,
+  normalizeBalanceProfile,
   normalizeChallenges,
   normalizeExpansions,
   normalizeMode,
@@ -23,6 +24,7 @@ export function parseShareSearch(search: string): {
       challenges: normalizeChallenges(rawChallenges),
       expansions: normalizeExpansions(rawExpansions),
       rulePreset: normalizeRulePreset(params.get("rules")),
+      balanceProfile: normalizeBalanceProfile(params.get("balance")),
     },
   };
 }
@@ -58,6 +60,12 @@ export function createShareUrl(
     url.searchParams.set("rules", selection.rulePreset);
   } else {
     url.searchParams.delete("rules");
+  }
+
+  if (selection.balanceProfile !== defaultSelection.balanceProfile) {
+    url.searchParams.set("balance", selection.balanceProfile);
+  } else {
+    url.searchParams.delete("balance");
   }
 
   return url.toString();

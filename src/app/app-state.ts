@@ -1,4 +1,5 @@
 import type {
+  BalanceProfile,
   BoardView,
   Challenge,
   Expansion,
@@ -57,6 +58,13 @@ export function withRulePreset(state: AppState, rulePreset: RulePreset): AppStat
   };
 }
 
+export function withBalanceProfile(state: AppState, balanceProfile: BalanceProfile): AppState {
+  return {
+    ...state,
+    selection: normalizeSelection({ ...state.selection, balanceProfile }),
+  };
+}
+
 export function withBoard(state: AppState, seed: string): AppState {
   return {
     ...state,
@@ -75,5 +83,6 @@ function normalizeSelection(selection: GenerationSelection): GenerationSelection
     challenges: [...new Set(challenges)],
     expansions: [...new Set(selection.expansions ?? defaultSelection.expansions)],
     rulePreset: selection.rulePreset ?? defaultSelection.rulePreset,
+    balanceProfile: selection.balanceProfile ?? defaultSelection.balanceProfile,
   };
 }

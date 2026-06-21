@@ -23,6 +23,7 @@ export function createBoardView(seed: string, selection: GenerationSelection): B
       challenges: [...selection.challenges],
       expansions: [...selection.expansions],
       rulePreset: selection.rulePreset,
+      balanceProfile: selection.balanceProfile,
     },
     options,
     board,
@@ -34,7 +35,7 @@ export function createBoardView(seed: string, selection: GenerationSelection): B
 export function generateBalancedBoard(
   seed: string,
   options: GenerationOptions,
-  maxAttempts = 100,
+  maxAttempts = maxAttemptsForProfile(options),
 ): readonly Hex[] {
   let state = createRandomState(hashSeed(seed));
   let bestBoard: readonly Hex[] = [];
@@ -50,10 +51,22 @@ export function generateBalancedBoard(
       bestBoard = result.value;
     }
 
-    if (score >= 0.95) break;
+    if (score >= targetScoreForProfile(options)) break;
   }
 
   return bestBoard;
+}
+
+function maxAttemptsForProfile(options: GenerationOptions): number {
+  if (options.balanceProfile === "strict") return 240;
+  if (options.balanceProfile === "wild") return 40;
+  return 100;
+}
+
+function targetScoreForProfile(options: GenerationOptions): number {
+  if (options.balanceProfile === "strict") return 1.08;
+  if (options.balanceProfile === "wild") return 0.72;
+  return 0.95;
 }
 
 export function generateRandomBoard(
