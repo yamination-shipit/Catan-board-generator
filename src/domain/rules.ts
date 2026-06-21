@@ -236,14 +236,14 @@ export const RULE_PRESETS: Record<
 
 export const PORTS: readonly Port[] = [
   { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
-  { type: "wheat", hexRow: 0, hexCol: 2, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "wheat", hexRow: 0, hexCol: 1, vertices: [0, 1], label: "2:1", shortLabel: "Wheat" },
   { type: "ore", hexRow: 0, hexCol: 2, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
   { type: "3:1", hexRow: 2, hexCol: 4, vertices: [1, 2], label: "3:1", shortLabel: "?" },
   { type: "sheep", hexRow: 3, hexCol: 3, vertices: [2, 3], label: "2:1", shortLabel: "Sheep" },
   { type: "3:1", hexRow: 4, hexCol: 2, vertices: [3, 4], label: "3:1", shortLabel: "?" },
-  { type: "brick", hexRow: 4, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Brick" },
+  { type: "brick", hexRow: 4, hexCol: 1, vertices: [4, 5], label: "2:1", shortLabel: "Brick" },
   { type: "wood", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
-  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
 ];
 
 export const COMPACT_PORTS: readonly Port[] = [
@@ -257,28 +257,28 @@ export const COMPACT_PORTS: readonly Port[] = [
 
 export const FIVE_SIX_PORTS: readonly Port[] = [
   { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
-  { type: "wheat", hexRow: 0, hexCol: 2, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "wheat", hexRow: 0, hexCol: 1, vertices: [0, 1], label: "2:1", shortLabel: "Wheat" },
   { type: "ore", hexRow: 0, hexCol: 2, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
   { type: "3:1", hexRow: 1, hexCol: 3, vertices: [1, 2], label: "3:1", shortLabel: "?" },
   { type: "sheep", hexRow: 3, hexCol: 5, vertices: [1, 2], label: "2:1", shortLabel: "Sheep" },
-  { type: "3:1", hexRow: 5, hexCol: 3, vertices: [2, 3], label: "3:1", shortLabel: "?" },
+  { type: "3:1", hexRow: 4, hexCol: 4, vertices: [3, 4], label: "3:1", shortLabel: "?" },
   { type: "brick", hexRow: 6, hexCol: 2, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
-  { type: "sheep", hexRow: 6, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Sheep" },
-  { type: "wood", hexRow: 5, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Wood" },
+  { type: "sheep", hexRow: 6, hexCol: 1, vertices: [4, 5], label: "2:1", shortLabel: "Sheep" },
+  { type: "wood", hexRow: 5, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
   { type: "3:1", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
-  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+  { type: "3:1", hexRow: 1, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
 ];
 
 export const SEAFARERS_PORTS: readonly Port[] = [
   { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
-  { type: "wheat", hexRow: 0, hexCol: 3, vertices: [5, 0], label: "2:1", shortLabel: "Wheat" },
+  { type: "wheat", hexRow: 0, hexCol: 1, vertices: [0, 1], label: "2:1", shortLabel: "Wheat" },
   { type: "ore", hexRow: 1, hexCol: 4, vertices: [1, 2], label: "2:1", shortLabel: "Ore" },
   { type: "3:1", hexRow: 3, hexCol: 6, vertices: [1, 2], label: "3:1", shortLabel: "?" },
   { type: "sheep", hexRow: 5, hexCol: 4, vertices: [2, 3], label: "2:1", shortLabel: "Sheep" },
-  { type: "3:1", hexRow: 6, hexCol: 2, vertices: [2, 3], label: "3:1", shortLabel: "?" },
-  { type: "brick", hexRow: 6, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Brick" },
+  { type: "3:1", hexRow: 6, hexCol: 3, vertices: [2, 3], label: "3:1", shortLabel: "?" },
+  { type: "brick", hexRow: 6, hexCol: 1, vertices: [4, 5], label: "2:1", shortLabel: "Brick" },
   { type: "wood", hexRow: 4, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
-  { type: "3:1", hexRow: 2, hexCol: 0, vertices: [4, 5], label: "3:1", shortLabel: "?" },
+  { type: "3:1", hexRow: 2, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
 ];
 
 export const GHOST_SETTLEMENTS: readonly GhostSettlement[] = [

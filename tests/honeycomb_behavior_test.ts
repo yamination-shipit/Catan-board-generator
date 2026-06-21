@@ -37,6 +37,7 @@ Deno.test({
       await assertTopCopyUsesFullUrl(page);
       await assertResourceColorPreferencesPersist(page);
       await assertResourceHighlightingWorks(page);
+      await assertPortHighlightingWorks(page);
 
       await page.locator("#generate-btn").click();
       await page.waitForSelector("#board-svg");
@@ -62,6 +63,7 @@ Deno.test({
       await page.locator("#variant-select").selectOption("compact-tight");
       await page.locator("#rule-preset-select").selectOption("balanced-neutral");
       await page.waitForSelector(".neutral-road");
+      await assertNeutralHighlightingWorks(page);
       assert.ok(
         await page.locator("#rules-body").textContent().then((text) =>
           text?.includes("neutral roads")
@@ -227,6 +229,35 @@ async function assertResourceHighlightingWorks(page: Page): Promise<void> {
   await page.locator('.hex[data-resource="wood"]').first().click();
   assert.ok(await page.locator('.stat-tile[data-resource="wood"].is-selected-resource').count());
   assert.ok(await page.locator('.hex[data-resource="wood"].is-selected-resource').count());
+
+  await page.locator("#clear-selection-btn").click();
+  assert.equal(await page.locator(".is-selected-resource").count(), 0);
+}
+
+async function assertPortHighlightingWorks(page: Page): Promise<void> {
+  await page.locator('.port[data-port-type="wheat"]').first().click();
+  assert.ok(await page.locator('.port[data-port-type="wheat"].is-selected-port').count());
+  assert.ok(await page.locator('.hex[data-resource="wheat"].is-selected-resource').count());
+  assert.ok(await page.locator('.stat-tile[data-resource="wheat"].is-selected-resource').count());
+
+  await page.locator("#clear-selection-btn").click();
+  assert.equal(await page.locator(".is-selected-port").count(), 0);
+  assert.equal(await page.locator(".is-selected-resource").count(), 0);
+}
+
+async function assertNeutralHighlightingWorks(page: Page): Promise<void> {
+  const neutralCount = await page.locator(".neutral-marker").count();
+  assert.ok(neutralCount > 0);
+
+  await page.locator(".neutral-marker").first().click();
+  assert.equal(await page.locator(".neutral-marker.is-selected-neutral").count(), neutralCount);
+
+  await page.locator(".neutral-marker").first().click();
+  assert.equal(await page.locator(".neutral-marker.is-selected-neutral").count(), 0);
+
+  await page.locator(".neutral-marker").first().click();
+  await page.locator("#board-svg").click({ position: { x: 8, y: 8 } });
+  assert.equal(await page.locator(".neutral-marker.is-selected-neutral").count(), 0);
 }
 
 async function closeBrowser(browser: Browser): Promise<void> {
