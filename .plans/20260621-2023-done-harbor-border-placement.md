@@ -14,10 +14,12 @@ geometry.
 
 ## Validation
 
-- `just test`
-- `just ci`
-- `just test-honeycomb`
+- Reproduction: corrected the test mapping and confirmed `4:1:4-5` failed as inland.
+- `deno test --allow-read tests/domain_behavior_test.ts --filter portFixtures`: passed.
+- `just test`: passed with 27 domain tests.
+- `just ci`: passed.
+- `just test-honeycomb`: passed.
 
 ## Status
 
-Planned.
+Done.

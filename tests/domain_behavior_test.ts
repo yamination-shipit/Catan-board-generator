@@ -157,7 +157,7 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
       "2:4:1-2",
       "3:3:2-3",
       "4:2:3-4",
-      "4:1:4-5",
+      "4:1:2-3",
       "3:0:4-5",
       "1:0:5-0",
     ],
@@ -588,12 +588,12 @@ function selection(overrides: Partial<GenerationSelection> = {}): GenerationSele
 }
 
 const edgeDirections: readonly { readonly q: number; readonly r: number }[] = [
-  { q: 0, r: -1 },
   { q: 1, r: -1 },
   { q: 1, r: 0 },
   { q: 0, r: 1 },
   { q: -1, r: 1 },
   { q: -1, r: 0 },
+  { q: 0, r: -1 },
 ];
 
 function historyEntry(
