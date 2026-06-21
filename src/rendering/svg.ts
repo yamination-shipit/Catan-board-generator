@@ -1,4 +1,4 @@
-import type { Challenge, Hex, Mode, Port, RulePreset, Variant } from "../types.ts";
+import type { Challenge, Hex, Mode, Port, Resource, RulePreset, Variant } from "../types.ts";
 import { getGhostSettlements } from "../domain/options.ts";
 import { RESOURCES, RULE_PRESETS } from "../domain/rules.ts";
 import { pipsForNumber } from "../domain/board.ts";
@@ -11,6 +11,7 @@ export function renderBoardSvg(input: {
   readonly challenges: readonly Challenge[];
   readonly rulePreset: RulePreset;
   readonly ports: readonly Port[];
+  readonly resourceColors?: Partial<Record<Resource, string>>;
 }): string {
   const hexSize = 60;
   const hexWidth = hexSize * Math.sqrt(3);
@@ -39,7 +40,9 @@ export function renderBoardSvg(input: {
   const water = waterHexPositions.map((hex) =>
     renderWaterHex(hex.q, hex.r, hexSize, offsetX, offsetY)
   ).join("");
-  const land = input.board.map((hex) => renderHex(center(hex), hexSize, hex)).join("");
+  const land = input.board.map((hex) =>
+    renderHex(center(hex), hexSize, hex, input.resourceColors ?? {})
+  ).join("");
   const ports = renderPorts(input.board, hexSize, center, input.ports);
   const ghosts = input.mode === "2"
     ? renderGhostSettlements(
@@ -87,14 +90,21 @@ function renderWaterHex(
   return `<polygon points="${points}" fill="#3b7dd8" stroke="#2a5a9e" stroke-width="1.5" opacity="0.5"/>`;
 }
 
-function renderHex(center: Point, size: number, hex: Hex): string {
+function renderHex(
+  center: Point,
+  size: number,
+  hex: Hex,
+  resourceColors: Partial<Record<Resource, string>>,
+): string {
   const resource = RESOURCES[hex.resource];
   const number = hex.number;
   const pips = pipsForNumber(number);
   const token = number === null ? "" : renderNumberToken(center, number, pips);
   return `<g class="hex resource-${hex.resource}" data-resource="${hex.resource}" tabindex="0"><polygon class="hex-fill" points="${
     hexPoints(center.x, center.y, size)
-  }" fill="${resource.color}" stroke="#263238" stroke-width="2" opacity="0.92"/>
+  }" fill="${
+    resourceColors[hex.resource] ?? resource.color
+  }" stroke="#263238" stroke-width="2" opacity="0.92"/>
 <text x="${center.x}" y="${
     center.y - 12
   }" text-anchor="middle" font-size="13" fill="#111827" font-weight="700">${resource.shortLabel}</text>${token}</g>`;

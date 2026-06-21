@@ -154,9 +154,30 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
   assert.deepEqual(ports, PORTS);
 });
 
-Deno.test("resources_WhenRenderingWheat_UsesWhiteTileColor", () => {
+Deno.test("resources_WhenRenderingWheat_UsesGoldenTileColor", () => {
   // Arrange / Act / Assert
-  assert.equal(RESOURCES.wheat.color, "#f8fafc");
+  assert.equal(RESOURCES.wheat.color, "#f4c430");
+});
+
+Deno.test("renderBoardSvg_WhenResourceColorsAreProvided_UsesColorOverrides", () => {
+  // Arrange
+  const board: readonly Hex[] = [
+    { row: 0, col: 0, q: 0, r: 0, resource: "wheat", number: 5 },
+  ];
+
+  // Act
+  const svg = renderBoardSvg({
+    board,
+    mode: "3-4",
+    variant: "full-neutral",
+    challenges: [],
+    rulePreset: "balanced-neutral",
+    ports: [],
+    resourceColors: { wheat: "#123abc" },
+  });
+
+  // Assert
+  assert.ok(svg.includes('fill="#123abc"'));
 });
 
 Deno.test("createShareUrl_WhenChallengesAreEmpty_RemovesChallengeParameter", () => {

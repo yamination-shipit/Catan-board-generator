@@ -5,7 +5,7 @@
 Restore wheat to the previous golden default and add per-browser resource color preferences.
 Preferences stay in localStorage and do not affect seeds or share URLs.
 
-## Plan
+## Completed
 
 - Restore `RESOURCES.wheat.color` to `#f4c430`.
 - Add a browser-local `catan-board-resource-colors` preference map, validating values before use.
@@ -16,10 +16,10 @@ Preferences stay in localStorage and do not affect seeds or share URLs.
 
 ## Validation
 
-- Pending: `just check`
-- Pending: `just test`
-- Pending: `just test-honeycomb`
-- Pending: `just ci`
+- Passed: `just check`
+- Passed: `just test`
+- Passed: `just test-honeycomb`
+- Passed: `just ci`
 
 ## Risks
 

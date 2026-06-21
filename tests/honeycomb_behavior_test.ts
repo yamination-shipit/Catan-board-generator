@@ -35,6 +35,7 @@ Deno.test({
       await assertBoardFits(page);
       await assertPointerPanMovesBoard(page);
       await assertTopCopyUsesFullUrl(page);
+      await assertResourceColorPreferencesPersist(page);
       await assertResourceHighlightingWorks(page);
 
       await page.locator("#generate-btn").click();
@@ -115,9 +116,7 @@ async function assertMobileLayoutFits(page: Page): Promise<void> {
     `expected page width ${pageWidths.scroll}px to fit viewport ${pageWidths.client}px`,
   );
 
-  for (
-    const selector of ["#board-panel", "main > section:nth-child(2)", "main > section:last-child"]
-  ) {
+  for (const selector of ["#board-panel", "#section-setup", "#section-colors", "#section-stats"]) {
     const box = await page.locator(selector).boundingBox();
     assert.ok(box);
     assert.ok(
@@ -164,6 +163,40 @@ async function assertTopCopyUsesFullUrl(page: Page): Promise<void> {
     (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText
   );
   assert.equal(copiedText, page.url());
+}
+
+async function assertResourceColorPreferencesPersist(page: Page): Promise<void> {
+  const customWheat = "#123abc";
+
+  await page.locator("#resource-color-wheat").evaluate((node, color) => {
+    const input = node as HTMLInputElement;
+    input.value = color;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, customWheat);
+  await page.waitForFunction((color) => {
+    const wheat = document.querySelector('.hex[data-resource="wheat"] .hex-fill');
+    return wheat?.getAttribute("fill") === color;
+  }, customWheat);
+  assert.equal(
+    await page.locator('.hex[data-resource="wheat"] .hex-fill').first().getAttribute("fill"),
+    customWheat,
+  );
+
+  await page.locator("#copy-url-btn").click();
+  const copiedText = await page.evaluate(() =>
+    (globalThis as typeof globalThis & { __copiedText?: string }).__copiedText
+  );
+  assert.ok(copiedText);
+  assert.equal(new URL(copiedText).searchParams.has("colors"), false);
+  assert.equal(copiedText.includes(customWheat.replace("#", "")), false);
+
+  await page.reload();
+  await page.waitForSelector("#board-svg");
+  assert.equal(await page.locator("#resource-color-wheat").inputValue(), customWheat);
+  assert.equal(
+    await page.locator('.hex[data-resource="wheat"] .hex-fill').first().getAttribute("fill"),
+    customWheat,
+  );
 }
 
 async function assertResourceHighlightingWorks(page: Page): Promise<void> {

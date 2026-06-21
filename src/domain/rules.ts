@@ -15,7 +15,7 @@ export const RESOURCES: Record<Resource, ResourceDefinition> = {
   wood: { name: "Wood", color: "#228b22", shortLabel: "Wood" },
   brick: { name: "Brick", color: "#b22222", shortLabel: "Brick" },
   sheep: { name: "Sheep", color: "#8fce72", shortLabel: "Sheep" },
-  wheat: { name: "Wheat", color: "#f8fafc", shortLabel: "Wheat" },
+  wheat: { name: "Wheat", color: "#f4c430", shortLabel: "Wheat" },
   ore: { name: "Ore", color: "#696969", shortLabel: "Ore" },
   desert: { name: "Desert", color: "#deb887", shortLabel: "Desert" },
   gold: { name: "Gold", color: "#facc15", shortLabel: "Gold" },
