@@ -468,6 +468,46 @@ a {
   opacity: 0.34;
 }
 
+.port,
+.neutral-marker {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 120ms ease;
+}
+
+.port .port-token,
+.port .port-line,
+.neutral-marker .neutral-settlement,
+.neutral-marker .neutral-road {
+  transition: stroke-width 120ms ease, opacity 120ms ease;
+}
+
+.port.is-selected-port .port-token {
+  stroke: #f59e0b;
+  stroke-width: 5;
+}
+
+.port.is-selected-port .port-line,
+.port.is-selected-port .port-anchor {
+  opacity: 1;
+  stroke: #f59e0b;
+}
+
+.neutral-marker.is-selected-neutral .neutral-settlement {
+  opacity: 1;
+  stroke: #f59e0b;
+  stroke-width: 4;
+}
+
+.neutral-marker.is-selected-neutral .neutral-road {
+  opacity: 1;
+  stroke: #f59e0b;
+}
+
+.is-dimmed-map {
+  opacity: 0.28;
+}
+
 .notification {
   background: #16a34a;
   border-radius: 8px;

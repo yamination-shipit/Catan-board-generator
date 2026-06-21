@@ -110,7 +110,7 @@ export function getGhostSettlements(
 
 export function getPortsForOptions(seed: string, options: GenerationOptions): readonly Port[] {
   const basePorts = getBasePorts(options);
-  if (!options.challenges.includes("harbors")) return basePorts;
+  if (!shouldShufflePorts(options)) return basePorts;
 
   const shuffled = shuffle(
     createRandomState(hashSeed(`${seed}:ports`)),
@@ -125,6 +125,10 @@ export function getPortsForOptions(seed: string, options: GenerationOptions): re
     ...port,
     ...shuffled[index],
   }));
+}
+
+function shouldShufflePorts(options: GenerationOptions): boolean {
+  return options.layoutKey === "seafarers" || options.challenges.includes("harbors");
 }
 
 function getBasePorts(options: GenerationOptions): readonly Port[] {

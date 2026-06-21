@@ -48,11 +48,16 @@ const resourceOrder: readonly Resource[] = [
   "desert",
   "sea",
 ];
+type PortType = Resource | "3:1";
+type MapSelection =
+  | { readonly kind: "resource"; readonly resource: Resource }
+  | { readonly kind: "port"; readonly portType: PortType }
+  | { readonly kind: "neutral" };
 
 let state: AppState;
 let seedHistory: readonly SeedHistoryEntry[] = [];
 let collapsedSections: Record<string, boolean> = {};
-let selectedResource: Resource | null = null;
+let mapSelection: MapSelection | null = null;
 let resourceColors: Partial<Record<Resource, string>> = {};
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -87,6 +92,7 @@ function bindEvents(): void {
   byId("copy-url-btn").addEventListener("click", copyCurrentUrl);
   byId("fullscreen-btn").addEventListener("click", toggleFullscreen);
   byId("board-reset-zoom-btn").addEventListener("click", resetZoom);
+  byId("clear-selection-btn").addEventListener("click", clearMapSelection);
   byId("theme-toggle-btn").addEventListener("click", toggleTheme);
   byId("collapse-all-btn").addEventListener("click", toggleAllSections);
   byId("reset-resource-colors-btn").addEventListener("click", resetResourceColors);
@@ -148,6 +154,7 @@ function refreshCurrentBoard(): void {
 
 function generateBoard(seed: string, saveHistory: boolean): void {
   state = withBoard(state, seed);
+  mapSelection = null;
   if (!state.boardView) return;
   const view = state.boardView;
   setInputValue("seed-input", view.seed);
@@ -203,7 +210,7 @@ function renderBoard(view = state.boardView): void {
     </div>
   `;
   initZoom();
-  applyResourceHighlight();
+  applyMapSelection();
 }
 
 function renderStats(board = state.boardView?.board ?? []): void {
@@ -235,10 +242,15 @@ function renderStats(board = state.boardView?.board ?? []): void {
   byId("stats").querySelectorAll<HTMLElement>("[data-resource]").forEach((tile) => {
     tile.addEventListener(
       "click",
-      () => toggleResourceHighlight(tile.dataset.resource as Resource),
+      () => {
+        const resource = tile.dataset.resource;
+        if (isResource(resource)) {
+          toggleMapSelection({ kind: "resource", resource });
+        }
+      },
     );
   });
-  applyResourceHighlight();
+  applyMapSelection();
 }
 
 function renderDifficulty(): void {
@@ -298,6 +310,9 @@ function renderRulesAndSetup(): void {
   const neutralRoadText = neutralCount > 0 && preset.neutralRoads
     ? "Place the neutral road markers connected to those neutral settlements."
     : "No neutral roads are used for this rules preset.";
+  const neutralBuildText = neutralCount > 0
+    ? "When a real player builds a road or settlement, also place one free legal road or settlement for a neutral player."
+    : "No neutral-player build step is used for this board.";
 
   const setupRules = view.selection.mode === "2"
     ? `
@@ -315,6 +330,9 @@ function renderRulesAndSetup(): void {
     }</li>
       <li>${neutralRoadText}</li>
       <li>Each player starts with ${preset.startingSettlements} settlements and ${preset.startingRoads} roads.</li>
+      <li>Roll for production twice each turn and resolve both results.</li>
+      <li>${neutralBuildText}</li>
+      <li>If your table uses 2-player trade cards or tokens, give each player 4 at setup.</li>
       <li>First to ${preset.victoryPoints} victory points wins.</li>
     </ol>
     <p class="muted">Rendered setup markers: ${neutralCount} neutral settlements${
@@ -330,6 +348,9 @@ function renderRulesAndSetup(): void {
   const expansionRules = expansions.length
     ? `<p><strong>Expansion notes:</strong> ${renderExpansionNotes(view.selection.expansions)}</p>`
     : `<p><strong>Expansion notes:</strong> None selected.</p>`;
+  const harborRules = `<p><strong>Harbors:</strong> ${
+    renderHarborNotes(view.selection.expansions, view.selection.challenges, view.ports.length)
+  }</p>`;
 
   body.innerHTML = `
     <div class="rules-block">
@@ -339,7 +360,7 @@ function renderRulesAndSetup(): void {
       <h3>Active Effects</h3>
       ${challengeRules}
       ${expansionRules}
-      <p class="muted">Harbor scramble shuffles harbor types across the active board's frame slots.</p>
+      ${harborRules}
     </div>
   `;
 }
@@ -347,14 +368,28 @@ function renderRulesAndSetup(): void {
 function renderExpansionNotes(expansions: readonly Expansion[]): string {
   const notes = expansions.map((expansion) => {
     if (expansion === "five-six-players") {
-      return "5-6 player extension uses a 30-hex island and 11 harbor slots";
+      return "5-6 player extension uses a 30-hex island, 11 harbors, and paired-player turn rules";
     }
     if (expansion === "seafarers") {
-      return "Seafarers uses a sea-and-gold scenario layout";
+      return "Seafarers uses a sea-and-gold scenario layout with ships, sea routes, and harbor tokens";
     }
-    return "Cities & Knights adds commodities, barbarians, knights, and a 13-point target";
+    return "Cities & Knights adds commodities, barbarians, knights, city walls, and a 13-point target without changing this app's terrain layout";
   });
   return notes.join("; ");
+}
+
+function renderHarborNotes(
+  expansions: readonly Expansion[],
+  challenges: readonly Challenge[],
+  portCount: number,
+): string {
+  if (expansions.includes("seafarers")) {
+    return `${portCount} scenario harbor tokens are shuffled deterministically from the seed.`;
+  }
+  if (challenges.includes("harbors")) {
+    return `${portCount} fixed coastal harbor slots are used, with harbor types scrambled by seed.`;
+  }
+  return `${portCount} fixed coastal harbor slots are used.`;
 }
 
 function renderSeedHistory(): void {
@@ -630,21 +665,88 @@ function normalizeHexColor(value: string): string {
   return value.toLowerCase();
 }
 
-function toggleResourceHighlight(resource: Resource): void {
-  selectedResource = selectedResource === resource ? null : resource;
-  applyResourceHighlight();
+function toggleMapSelection(selection: MapSelection): void {
+  mapSelection = selectionsMatch(mapSelection, selection) ? null : selection;
+  applyMapSelection();
 }
 
-function applyResourceHighlight(): void {
+function clearMapSelection(): void {
+  if (mapSelection === null) return;
+  mapSelection = null;
+  applyMapSelection();
+}
+
+function selectionsMatch(left: MapSelection | null, right: MapSelection): boolean {
+  if (!left || left.kind !== right.kind) return false;
+  if (left.kind === "resource" && right.kind === "resource") {
+    return left.resource === right.resource;
+  }
+  if (left.kind === "port" && right.kind === "port") {
+    return left.portType === right.portType;
+  }
+  return left.kind === "neutral" && right.kind === "neutral";
+}
+
+function applyMapSelection(): void {
   document.querySelectorAll<HTMLElement>("[data-resource]").forEach((element) => {
-    const matches = selectedResource !== null && element.dataset.resource === selectedResource;
-    const dims = selectedResource !== null && element.dataset.resource !== selectedResource;
+    const resource = element.dataset.resource;
+    const matches = resource !== undefined && resourceMatchesSelection(resource);
+    const dims = mapSelection !== null && !matches;
     element.classList.toggle("is-selected-resource", matches);
     element.classList.toggle("is-dimmed-resource", dims);
     if (element.classList.contains("stat-tile")) {
       element.setAttribute("aria-pressed", String(matches));
     }
   });
+
+  document.querySelectorAll<HTMLElement>("[data-port-type]").forEach((element) => {
+    const portType = element.dataset.portType;
+    const matches = portType !== undefined && portMatchesSelection(portType);
+    element.classList.toggle("is-selected-port", matches);
+    element.classList.toggle("is-dimmed-map", mapSelection !== null && !matches);
+  });
+
+  document.querySelectorAll<HTMLElement>("[data-neutral-marker]").forEach((element) => {
+    const matches = mapSelection?.kind === "neutral";
+    element.classList.toggle("is-selected-neutral", matches);
+    element.classList.toggle("is-dimmed-map", mapSelection !== null && !matches);
+  });
+
+  byId("clear-selection-btn").setAttribute("aria-pressed", String(mapSelection !== null));
+}
+
+function resourceMatchesSelection(resource: string): boolean {
+  if (mapSelection?.kind === "resource") return mapSelection.resource === resource;
+  if (mapSelection?.kind === "port") return mapSelection.portType === resource;
+  return false;
+}
+
+function portMatchesSelection(portType: string): boolean {
+  if (mapSelection?.kind === "port") return mapSelection.portType === portType;
+  if (mapSelection?.kind === "resource") return mapSelection.resource === portType;
+  return false;
+}
+
+function selectionFromElement(element: Element | null): MapSelection | null {
+  const neutral = element?.closest<HTMLElement>("[data-neutral-marker]");
+  if (neutral) return { kind: "neutral" };
+
+  const port = element?.closest<HTMLElement>("[data-port-type]");
+  const portType = port?.dataset.portType;
+  if (isPortType(portType)) {
+    return { kind: "port", portType };
+  }
+
+  const resource = element?.closest<HTMLElement>("[data-resource]");
+  const resourceName = resource?.dataset.resource;
+  if (isResource(resourceName)) {
+    return { kind: "resource", resource: resourceName };
+  }
+  return null;
+}
+
+function isPortType(value: string | undefined): value is PortType {
+  return value === "3:1" || isResource(value);
 }
 
 function applyStoredTheme(): void {
@@ -766,28 +868,26 @@ function initZoom(): void {
   let tapStart: {
     readonly pointerId: number;
     readonly point: Point;
-    readonly resource: Resource;
+    readonly selection: MapSelection | null;
+    readonly startedOnBoard: boolean;
   } | null = null;
 
   wrapper.addEventListener("pointerdown", (event) => {
     if (event.target instanceof Element && event.target.closest(".zoom-controls")) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    const resourceElement = event.target instanceof Element
-      ? event.target.closest<HTMLElement>("[data-resource]")
-      : null;
+    const target = event.target instanceof Element ? event.target : null;
     event.preventDefault();
     wrapper.setPointerCapture(event.pointerId);
     activePointers.set(event.pointerId, pointFromEvent(event));
     isPanning = activePointers.size === 1;
     lastPanPoint = activePointers.size === 1 ? pointFromEvent(event) : null;
     pinchStart = null;
-    tapStart = resourceElement?.dataset.resource
-      ? {
-        pointerId: event.pointerId,
-        point: pointFromEvent(event),
-        resource: resourceElement.dataset.resource as Resource,
-      }
-      : null;
+    tapStart = {
+      pointerId: event.pointerId,
+      point: pointFromEvent(event),
+      selection: selectionFromElement(target),
+      startedOnBoard: Boolean(target?.closest("#board-svg")),
+    };
   }, { signal: zoomAbortController.signal });
 
   wrapper.addEventListener("pointermove", (event) => {
@@ -833,7 +933,11 @@ function initZoom(): void {
       tapStart?.pointerId === event.pointerId &&
       distanceBetween(tapStart.point, pointFromEvent(event)) <= 8
     ) {
-      toggleResourceHighlight(tapStart.resource);
+      if (tapStart.selection) {
+        toggleMapSelection(tapStart.selection);
+      } else if (tapStart.startedOnBoard) {
+        clearMapSelection();
+      }
     }
     tapStart = null;
     activePointers.delete(event.pointerId);

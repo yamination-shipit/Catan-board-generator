@@ -9,9 +9,16 @@ import {
   countAdjacentHighNumbers,
   evaluateBoard,
 } from "../src/domain/scoring.ts";
-import { FIVE_SIX_PORTS, PORTS, RESOURCES, SEAFARERS_PORTS } from "../src/domain/rules.ts";
+import {
+  COMPACT_PORTS,
+  FIVE_SIX_PORTS,
+  LAYOUTS,
+  PORTS,
+  RESOURCES,
+  SEAFARERS_PORTS,
+} from "../src/domain/rules.ts";
 import { renderBoardSvg } from "../src/rendering/svg.ts";
-import type { GenerationSelection, Hex, SeedHistoryEntry } from "../src/types.ts";
+import type { GenerationSelection, Hex, LayoutKey, Port, SeedHistoryEntry } from "../src/types.ts";
 
 Deno.test("generateBoard_WhenGivenTheSameSeed_ReturnsTheSameBoard", () => {
   // Arrange
@@ -141,17 +148,43 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
     ports.map((port) => `${port.hexRow}:${port.hexCol}:${port.vertices.join("-")}`),
     [
       "0:0:5-0",
-      "0:2:5-0",
+      "0:1:0-1",
       "0:2:1-2",
       "2:4:1-2",
       "3:3:2-3",
       "4:2:3-4",
-      "4:0:3-4",
+      "4:1:4-5",
       "3:0:4-5",
-      "1:0:4-5",
+      "1:0:5-0",
     ],
   );
   assert.deepEqual(ports, PORTS);
+});
+
+Deno.test("portFixtures_WhenRenderedOnAnyLayout_AttachOnlyToCoastalEdges", () => {
+  // Arrange / Act / Assert
+  assertPortsUseBoundaryEdges("3-4", PORTS);
+  assertPortsUseBoundaryEdges("compact", COMPACT_PORTS);
+  assertPortsUseBoundaryEdges("5-6", FIVE_SIX_PORTS);
+  assertPortsUseBoundaryEdges("seafarers", SEAFARERS_PORTS);
+});
+
+Deno.test("getPortsForOptions_WhenUsingSeafarers_ShufflesHarborTokensBySeed", () => {
+  // Arrange
+  const selectionWithSeafarers = selection({ expansions: ["seafarers"] });
+  const firstOptions = getGenerationOptions("seafarers-one", selectionWithSeafarers);
+  const secondOptions = getGenerationOptions("seafarers-two", selectionWithSeafarers);
+
+  // Act
+  const first = getPortsForOptions("seafarers-one", firstOptions);
+  const repeated = getPortsForOptions("seafarers-one", firstOptions);
+  const second = getPortsForOptions("seafarers-two", secondOptions);
+
+  // Assert
+  assert.deepEqual(first, repeated);
+  assert.deepEqual(portSlots(first), portSlots(SEAFARERS_PORTS));
+  assert.deepEqual(portSlots(second), portSlots(SEAFARERS_PORTS));
+  assert.notDeepEqual(first.map((port) => port.type), second.map((port) => port.type));
 });
 
 Deno.test("resources_WhenRenderingWheat_UsesGoldenTileColor", () => {
@@ -422,7 +455,8 @@ Deno.test("createBoardView_WhenSeafarersIsSelected_UsesSeaAndGoldScenarioBoard",
   assert.deepEqual(seaNumbers, Array.from({ length: 7 }, () => null));
   assert.equal(goldNumbers.length, 2);
   assert.ok(goldNumbers.every((number) => number !== null));
-  assert.deepEqual(view.ports, SEAFARERS_PORTS);
+  assert.deepEqual(portSlots(view.ports), portSlots(SEAFARERS_PORTS));
+  assert.notDeepEqual(view.ports, SEAFARERS_PORTS);
 });
 
 Deno.test("createBoardView_WhenCitiesKnightsIsSelected_LeavesTerrainGenerationToBaseBoard", () => {
@@ -454,6 +488,28 @@ function countBy(values: readonly string[]): Record<string, number> {
   );
 }
 
+function assertPortsUseBoundaryEdges(layoutKey: LayoutKey, ports: readonly Port[]): void {
+  const layout = LAYOUTS[layoutKey];
+  const coordinates = new Set(layout.map((hex) => `${hex.q},${hex.r}`));
+  ports.forEach((port) => {
+    const hex = layout.find((candidate) =>
+      candidate.row === port.hexRow && candidate.col === port.hexCol
+    );
+    assert.ok(hex, `expected port ${port.hexRow}:${port.hexCol} to reference a layout hex`);
+    const direction = edgeDirections[port.vertices[0]];
+    assert.ok(direction, `expected port vertices ${port.vertices.join("-")} to describe an edge`);
+    assert.equal(
+      coordinates.has(`${hex.q + direction.q},${hex.r + direction.r}`),
+      false,
+      `expected port ${port.hexRow}:${port.hexCol}:${port.vertices.join("-")} to be coastal`,
+    );
+  });
+}
+
+function portSlots(ports: readonly Port[]): readonly string[] {
+  return ports.map((port) => `${port.hexRow}:${port.hexCol}:${port.vertices.join("-")}`);
+}
+
 function selection(overrides: Partial<GenerationSelection> = {}): GenerationSelection {
   return {
     mode: "3-4",
@@ -464,6 +520,15 @@ function selection(overrides: Partial<GenerationSelection> = {}): GenerationSele
     ...overrides,
   };
 }
+
+const edgeDirections: readonly { readonly q: number; readonly r: number }[] = [
+  { q: 0, r: -1 },
+  { q: 1, r: -1 },
+  { q: 1, r: 0 },
+  { q: 0, r: 1 },
+  { q: -1, r: 1 },
+  { q: -1, r: 0 },
+];
 
 function historyEntry(
   seed: string,

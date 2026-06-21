@@ -173,7 +173,7 @@ function renderPorts(
   hexCenter: (hex: Hex) => Point,
   ports: readonly Port[],
 ): string {
-  return ports.map((port) => {
+  return ports.map((port, index) => {
     const hex = board.find((candidate) =>
       candidate.row === port.hexRow && candidate.col === port.hexCol
     );
@@ -190,20 +190,34 @@ function renderPorts(
       y: mid.y + dy / length * 38,
     };
     const isSpecialty = port.type !== "3:1";
-    return `<line x1="${v1.x}" y1="${v1.y}" x2="${point.x}" y2="${point.y}" stroke="#8b6914" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-<line x1="${v2.x}" y1="${v2.y}" x2="${point.x}" y2="${point.y}" stroke="#8b6914" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
-<circle cx="${v1.x}" cy="${v1.y}" r="3.5" fill="#8b6914" opacity="0.8"/>
-<circle cx="${v2.x}" cy="${v2.y}" r="3.5" fill="#8b6914" opacity="0.8"/>
-<circle cx="${point.x}" cy="${point.y}" r="20" fill="${
+    const portName = port.type === "3:1"
+      ? "Generic 3:1 harbor"
+      : `${RESOURCES[port.type].name} harbor`;
+    return `<g class="port port-${
+      portTypeClass(port.type)
+    }" data-port-type="${port.type}" data-port-slot="${
+      index + 1
+    }" role="button" tabindex="0" aria-label="${portName}">
+<line class="port-line" x1="${v1.x}" y1="${v1.y}" x2="${point.x}" y2="${point.y}" stroke="#8b6914" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+<line class="port-line" x1="${v2.x}" y1="${v2.y}" x2="${point.x}" y2="${point.y}" stroke="#8b6914" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+<circle class="port-anchor" cx="${v1.x}" cy="${v1.y}" r="3.5" fill="#8b6914" opacity="0.8"/>
+<circle class="port-anchor" cx="${v2.x}" cy="${v2.y}" r="3.5" fill="#8b6914" opacity="0.8"/>
+<circle class="port-token" cx="${point.x}" cy="${point.y}" r="20" fill="${
       isSpecialty ? "#fff7e6" : "#e6f0ff"
     }" stroke="${isSpecialty ? "#d4a017" : "#4a90d9"}" stroke-width="2.5"/>
-<text x="${point.x}" y="${
+<text class="port-label" x="${point.x}" y="${
       point.y - 5
     }" text-anchor="middle" font-size="10" font-weight="700" fill="#1f2937">${port.label}</text>
-<text x="${point.x}" y="${
+<text class="port-resource" x="${point.x}" y="${
       point.y + 10
-    }" text-anchor="middle" font-size="9" font-weight="700" fill="#1f2937">${port.shortLabel}</text>`;
+    }" text-anchor="middle" font-size="9" font-weight="700" fill="#1f2937">${port.shortLabel}</text>
+<title>${portName}</title>
+</g>`;
   }).join("");
+}
+
+function portTypeClass(type: Port["type"]): string {
+  return type === "3:1" ? "generic" : type;
 }
 
 function renderGhostSettlements(
@@ -228,8 +242,11 @@ function renderGhostSettlements(
       ? `<line class="neutral-road" x1="${vertex.x}" y1="${vertex.y}" x2="${roadEnd.x}" y2="${roadEnd.y}" stroke="#374151" stroke-width="8" stroke-linecap="round" opacity="0.76"/>
 <line class="neutral-road-highlight" x1="${vertex.x}" y1="${vertex.y}" x2="${roadEnd.x}" y2="${roadEnd.y}" stroke="#f9fafb" stroke-width="2" stroke-linecap="round" opacity="0.72"/>`
       : "";
-    return `${road}<circle cx="${vertex.x}" cy="${vertex.y}" r="8" fill="#4b5563" stroke="#ffffff" stroke-width="2" opacity="0.86"/>
-<text x="${vertex.x}" y="${vertex.y}" text-anchor="middle" font-size="10" fill="#ffffff" dominant-baseline="middle" font-weight="700">N</text>`;
+    return `<g class="neutral-marker" data-neutral-marker="true" role="button" tabindex="0" aria-label="Neutral settlement">
+${road}<circle class="neutral-settlement" cx="${vertex.x}" cy="${vertex.y}" r="8" fill="#4b5563" stroke="#ffffff" stroke-width="2" opacity="0.86"/>
+<text class="neutral-label" x="${vertex.x}" y="${vertex.y}" text-anchor="middle" font-size="10" fill="#ffffff" dominant-baseline="middle" font-weight="700">N</text>
+<title>Neutral settlement</title>
+</g>`;
   }).join("");
 }
 
