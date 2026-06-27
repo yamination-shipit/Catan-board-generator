@@ -32,7 +32,7 @@
     "rules": {}
   },
   "imports": {
-    "playwright": "npm:playwright@1.61.0"
+    "playwright": "npm:playwright@1.61.1"
   },
   "tasks": {
     "setup": "deno run --allow-read --allow-write --allow-env --allow-run scripts/setup.ts",
