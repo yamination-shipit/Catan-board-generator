@@ -75,6 +75,9 @@ just serve               # Build and serve dist/ on localhost:8080
 ## Workflow
 
 - Always commit and push when done with a task, unless explicitly instructed otherwise.
+- Never report a task as done while `git status --porcelain` has output. Immediately before the
+  final response, run it and resolve every task-created change by committing it; preserve and
+  explicitly report any unrelated pre-existing changes.
 - For non-trivial work, create and maintain a `.plans/` file.
 - For non-trivial design or compatibility changes, read relevant `docs/adr/` records and add a new
   ADR when the decision should guide future work.

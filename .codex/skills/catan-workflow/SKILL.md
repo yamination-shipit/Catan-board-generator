@@ -34,6 +34,7 @@ to `CLAUDE.md`.
    validation state, or leaves context future sessions need.
 5. Commit logical slices using the repo/user commit convention.
 6. Push completed work unless the user explicitly says not to.
+7. Run the clean-tree completion gate in `CLAUDE.md` immediately before reporting completion.
 
 ## Guardrails
 
