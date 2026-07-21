@@ -2,6 +2,19 @@
 
 Release notes are managed by Release Please from Conventional Commits.
 
+## [0.4.0](https://github.com/yamination-shipit/Catan-board-generator/compare/v0.3.0...v0.4.0) (2026-07-21)
+
+
+### Features
+
+* **board:** add harbour edition toggle ([6fda777](https://github.com/yamination-shipit/Catan-board-generator/commit/6fda77758e31600bc3cfa874095e03a2e87af010))
+
+
+### Bug Fixes
+
+* **board:** deploy harbour coastal repair ([15263b8](https://github.com/yamination-shipit/Catan-board-generator/commit/15263b81d10b42d4bd845813a22e3513b804c978))
+* **board:** keep harbours outside the island ([da48030](https://github.com/yamination-shipit/Catan-board-generator/commit/da48030dd266af77848d5e4cadd74a6d71dea14d))
+
 ## [0.3.0](https://github.com/yamination-shipit/Catan-board-generator/compare/v0.1.0...v0.3.0) (2026-06-15)
 
 ### Features
