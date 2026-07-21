@@ -84,12 +84,63 @@ Deno.test({
       await page.waitForSelector('.hex[data-resource="gold"]');
       await assertMobileLayoutFits(page);
       await assertBoardFits(page);
+      await assertAllHarbourLayoutsKeepTokensOverWater(page);
     } finally {
       await closeBrowser(browser);
       await server.shutdown();
     }
   },
 });
+
+async function assertAllHarbourLayoutsKeepTokensOverWater(page: Page): Promise<void> {
+  const cases = [
+    ["?seed=harbour-browser&mode=3-4", 9],
+    ["?seed=harbour-browser&mode=2&variant=compact-duel", 6],
+    ["?seed=harbour-browser&mode=3-4&expansions=five-six-players", 11],
+    ["?seed=harbour-browser&mode=3-4&expansions=seafarers", 9],
+  ] as const;
+
+  for (const [search, expectedPorts] of cases) {
+    await page.goto(`${baseUrl}/${search}`);
+    await page.waitForFunction(
+      (count) => document.querySelectorAll(".port-token").length === count,
+      expectedPorts,
+    );
+    const overlaps = await page.locator("#board-svg").evaluate((svg) => {
+      const polygons = [...svg.querySelectorAll<SVGPolygonElement>(".hex-fill")];
+      return [...svg.querySelectorAll<SVGCircleElement>(".port-token")].flatMap((token) => {
+        const center = { x: token.cx.baseVal.value, y: token.cy.baseVal.value };
+        const radius = token.r.baseVal.value;
+        const intersectsLand = polygons.some((polygon) => {
+          if (polygon.isPointInFill(new DOMPoint(center.x, center.y))) return true;
+          const points = Array.from({ length: polygon.points.numberOfItems }, (_, index) => {
+            const point = polygon.points.getItem(index);
+            return { x: point.x, y: point.y };
+          });
+          return points.some((point, index) => {
+            const next = points[(index + 1) % points.length];
+            if (!next) return false;
+            const dx = next.x - point.x;
+            const dy = next.y - point.y;
+            const ratio = Math.max(
+              0,
+              Math.min(
+                1,
+                ((center.x - point.x) * dx + (center.y - point.y) * dy) /
+                  (dx * dx + dy * dy),
+              ),
+            );
+            const nearestX = point.x + ratio * dx;
+            const nearestY = point.y + ratio * dy;
+            return Math.hypot(center.x - nearestX, center.y - nearestY) < radius;
+          });
+        });
+        return intersectsLand ? [token.closest(".port")?.getAttribute("aria-label") ?? "port"] : [];
+      });
+    });
+    assert.deepEqual(overlaps, [], `expected ${search} harbour tokens to stay over water`);
+  }
+}
 
 function startStaticServer(): Deno.HttpServer {
   return Deno.serve({ hostname, port, onListen: () => {} }, async (request) => {
