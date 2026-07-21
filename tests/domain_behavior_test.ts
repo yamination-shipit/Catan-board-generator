@@ -19,6 +19,7 @@ import {
   RESOURCES,
   SEAFARERS_PORTS,
 } from "../src/domain/rules.ts";
+import { axialToPixel, getVertexPosition, type Point } from "../src/rendering/geometry.ts";
 import { renderBoardSvg } from "../src/rendering/svg.ts";
 import type { GenerationSelection, Hex, LayoutKey, Port, SeedHistoryEntry } from "../src/types.ts";
 
@@ -157,7 +158,7 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
       "2:4:1-2",
       "3:3:2-3",
       "4:2:3-4",
-      "4:1:4-5",
+      "4:1:2-3",
       "3:0:4-5",
       "1:0:5-0",
     ],
@@ -555,20 +556,41 @@ function countBy(values: readonly string[]): Record<string, number> {
 
 function assertPortsUseBoundaryEdges(layoutKey: LayoutKey, ports: readonly Port[]): void {
   const layout = LAYOUTS[layoutKey];
-  const coordinates = new Set(layout.map((hex) => `${hex.q},${hex.r}`));
   ports.forEach((port) => {
     const hex = layout.find((candidate) =>
       candidate.row === port.hexRow && candidate.col === port.hexCol
     );
     assert.ok(hex, `expected port ${port.hexRow}:${port.hexCol} to reference a layout hex`);
-    const direction = edgeDirections[port.vertices[0]];
-    assert.ok(direction, `expected port vertices ${port.vertices.join("-")} to describe an edge`);
     assert.equal(
-      coordinates.has(`${hex.q + direction.q},${hex.r + direction.r}`),
-      false,
+      port.vertices[1],
+      (port.vertices[0] + 1) % 6,
+      `expected port vertices ${port.vertices.join("-")} to describe one edge`,
+    );
+
+    const center = axialToPixel(hex.q, hex.r, 1);
+    const edge = port.vertices.map((vertex) =>
+      getVertexPosition(center.x, center.y, 1, vertex)
+    ) as [Point, Point];
+    const sharingHex = layout.find((candidate) => {
+      if (candidate === hex) return false;
+      const candidateCenter = axialToPixel(candidate.q, candidate.r, 1);
+      const vertices = Array.from(
+        { length: 6 },
+        (_, vertex) => getVertexPosition(candidateCenter.x, candidateCenter.y, 1, vertex),
+      );
+      return edge.every((point) => vertices.some((vertex) => pointsMatch(point, vertex)));
+    });
+
+    assert.equal(
+      sharingHex,
+      undefined,
       `expected port ${port.hexRow}:${port.hexCol}:${port.vertices.join("-")} to be coastal`,
     );
   });
+}
+
+function pointsMatch(left: Point, right: Point): boolean {
+  return Math.abs(left.x - right.x) < 1e-9 && Math.abs(left.y - right.y) < 1e-9;
 }
 
 function portSlots(ports: readonly Port[]): readonly string[] {
@@ -586,15 +608,6 @@ function selection(overrides: Partial<GenerationSelection> = {}): GenerationSele
     ...overrides,
   };
 }
-
-const edgeDirections: readonly { readonly q: number; readonly r: number }[] = [
-  { q: 0, r: -1 },
-  { q: 1, r: -1 },
-  { q: 1, r: 0 },
-  { q: 0, r: 1 },
-  { q: -1, r: 1 },
-  { q: -1, r: 0 },
-];
 
 function historyEntry(
   seed: string,
