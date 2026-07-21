@@ -19,6 +19,7 @@ export function createBoardView(seed: string, selection: GenerationSelection): B
     seed,
     selection: {
       mode: selection.mode,
+      edition: selection.edition,
       variant: selection.variant,
       challenges: [...selection.challenges],
       expansions: [...selection.expansions],

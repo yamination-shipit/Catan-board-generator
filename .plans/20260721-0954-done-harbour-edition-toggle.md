@@ -1,9 +1,9 @@
 ---
 title: Harbour Edition Toggle
 date: 2026-07-21
-last_updated: 2026-07-21T09:54:00Z
+last_updated: 2026-07-21T10:07:31Z
 type: implementation-plan
-status: planned
+status: done
 ---
 
 # 1. Harbour Edition Toggle
@@ -29,6 +29,7 @@ and fixed-versus-removable harbour behavior.
 - `just test-honeycomb`
 - `just ci`
 
-## 1.4 Status
+## 1.4 Result
 
-Planned.
+Implemented and fully validated with Deno 2.9.3. The 5th edition remains the compatible default; the
+6th edition uses its fixed frame and disables harbor scrambling on full base boards.

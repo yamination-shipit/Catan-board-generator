@@ -14,6 +14,7 @@ export function upsertSeedHistory(
 function isSameBoardChoice(left: SeedHistoryEntry, right: SeedHistoryEntry): boolean {
   return left.seed === right.seed &&
     left.mode === right.mode &&
+    (left.edition ?? "fifth") === (right.edition ?? "fifth") &&
     left.variant === right.variant &&
     left.challenges.join(",") === right.challenges.join(",") &&
     (left.expansions ?? []).join(",") === (right.expansions ?? []).join(",") &&

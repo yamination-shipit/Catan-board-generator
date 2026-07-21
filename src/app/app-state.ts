@@ -1,5 +1,6 @@
 import type {
   BalanceProfile,
+  BoardEdition,
   BoardView,
   Challenge,
   Expansion,
@@ -27,6 +28,13 @@ export function withMode(state: AppState, mode: Mode): AppState {
   return {
     ...state,
     selection: normalizeSelection({ ...state.selection, mode }),
+  };
+}
+
+export function withBoardEdition(state: AppState, edition: BoardEdition): AppState {
+  return {
+    ...state,
+    selection: normalizeSelection({ ...state.selection, edition }),
   };
 }
 
@@ -73,12 +81,19 @@ export function withBoard(state: AppState, seed: string): AppState {
 }
 
 function normalizeSelection(selection: GenerationSelection): GenerationSelection {
-  const challenges = selection.mode === "2"
+  const modeChallenges = selection.mode === "2"
     ? selection.challenges
     : selection.challenges.filter((challenge) => challenge !== "neutral");
+  const customHarbourLayout = selection.expansions.includes("five-six-players") ||
+    selection.expansions.includes("seafarers") ||
+    (selection.mode === "2" && selection.variant.startsWith("compact"));
+  const challenges = selection.edition === "sixth" && !customHarbourLayout
+    ? modeChallenges.filter((challenge) => challenge !== "harbors")
+    : modeChallenges;
 
   return {
     mode: selection.mode,
+    edition: selection.edition ?? defaultSelection.edition,
     variant: selection.variant,
     challenges: [...new Set(challenges)],
     expansions: [...new Set(selection.expansions ?? defaultSelection.expansions)],

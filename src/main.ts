@@ -3,6 +3,7 @@ import {
   initialState,
   withBalanceProfile,
   withBoard,
+  withBoardEdition,
   withChallenges,
   withExpansions,
   withMode,
@@ -11,6 +12,7 @@ import {
 } from "./app/app-state.ts";
 import { createRandomSeed } from "./app/seed.ts";
 import {
+  BOARD_EDITION_NAMES,
   CHALLENGE_NAMES,
   EXPANSION_NAMES,
   RESOURCES,
@@ -28,6 +30,7 @@ import { upsertSeedHistory } from "./domain/history.ts";
 import { renderBoardSvg } from "./rendering/svg.ts";
 import type {
   BalanceProfile,
+  BoardEdition,
   Challenge,
   Expansion,
   Mode,
@@ -87,6 +90,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function bindEvents(): void {
   byId("mode-34").addEventListener("click", () => switchMode("3-4"));
   byId("mode-2").addEventListener("click", () => switchMode("2"));
+  byId("edition-5").addEventListener("click", () => switchEdition("fifth"));
+  byId("edition-6").addEventListener("click", () => switchEdition("sixth"));
   byId("generate-btn").addEventListener("click", () => generateBoard(createRandomSeed(), true));
   byId("load-seed-btn").addEventListener("click", loadSeedFromInput);
   byId("copy-seed-btn").addEventListener(
@@ -147,6 +152,11 @@ function switchMode(mode: Mode): void {
   refreshCurrentBoard();
 }
 
+function switchEdition(edition: BoardEdition): void {
+  state = withBoardEdition(state, edition);
+  refreshCurrentBoard();
+}
+
 function loadSeedFromInput(): void {
   const seed = inputValue("seed-input").trim();
   if (!seed) {
@@ -157,6 +167,7 @@ function loadSeedFromInput(): void {
 }
 
 function refreshCurrentBoard(): void {
+  syncControlsFromState();
   if (!state.boardView) return;
   generateBoard(state.boardView.seed, true);
 }
@@ -184,6 +195,7 @@ function generateBoard(seed: string, saveHistory: boolean): void {
     seedHistory = upsertSeedHistory(seedHistory, {
       seed: view.seed,
       mode: view.selection.mode,
+      edition: view.selection.edition,
       variant: view.selection.variant,
       challenges: view.selection.challenges,
       expansions: view.selection.expansions,
@@ -299,6 +311,7 @@ function renderCurrentSeed(): void {
   const parts = [
     `Current Seed: ${view.seed}`,
     `Mode: ${view.selection.mode === "2" ? "2 Players" : "3-4 Players"}`,
+    `Edition: ${BOARD_EDITION_NAMES[view.selection.edition]}`,
   ];
   if (view.selection.mode === "2") parts.push(`Variant: ${VARIANT_NAMES[view.selection.variant]}`);
   if (view.selection.challenges.length) {
@@ -385,7 +398,13 @@ function renderRulesAndSetup(): void {
     ? `<p><strong>Expansion notes:</strong> ${renderExpansionNotes(view.selection.expansions)}</p>`
     : `<p><strong>Expansion notes:</strong> None selected.</p>`;
   const harborRules = `<p><strong>Harbors:</strong> ${
-    renderHarborNotes(view.selection.expansions, view.selection.challenges, view.ports.length)
+    renderHarborNotes(
+      view.selection.expansions,
+      view.selection.challenges,
+      view.ports.length,
+      view.selection.edition,
+      view.options.compact,
+    )
   }</p>`;
 
   body.innerHTML = `
@@ -418,12 +437,20 @@ function renderHarborNotes(
   expansions: readonly Expansion[],
   challenges: readonly Challenge[],
   portCount: number,
+  edition: BoardEdition,
+  compact: boolean,
 ): string {
   if (expansions.includes("seafarers")) {
     return `${portCount} scenario harbor tokens are shuffled deterministically from the seed.`;
   }
   if (challenges.includes("harbors")) {
     return `${portCount} fixed coastal harbor slots are used, with harbor types scrambled by seed.`;
+  }
+  if (
+    edition === "sixth" && !compact &&
+    !expansions.some((expansion) => expansion === "five-six-players" || expansion === "seafarers")
+  ) {
+    return `${portCount} fixed 6th edition frame harbors are used; harbor scrambling is unavailable.`;
   }
   return `${portCount} fixed coastal harbor slots are used.`;
 }
@@ -449,6 +476,7 @@ function renderSeedHistory(): void {
     const balanceText = entry.balanceProfile && entry.balanceProfile !== "classic"
       ? ` | ${entry.balanceProfile} balance`
       : "";
+    const editionText = entry.edition === "sixth" ? " | 6th Edition" : "";
 
     const button = document.createElement("button");
     button.className = "history-item";
@@ -460,7 +488,7 @@ function renderSeedHistory(): void {
     const detail = document.createElement("small");
     detail.textContent = `${entry.mode === "2" ? "2 Players" : "3-4 Players"} | ${
       VARIANT_NAMES[entry.variant]
-    }${ruleText}${challengeText}${expansionText}${balanceText}${difficultyText}`;
+    }${editionText}${ruleText}${challengeText}${expansionText}${balanceText}${difficultyText}`;
 
     button.append(seedSpan, detail);
     list.appendChild(button);
@@ -475,6 +503,7 @@ function restoreSeedHistory(index: number): void {
   if (!entry) return;
   state = initialState({
     mode: entry.mode,
+    edition: entry.edition ?? "fifth",
     variant: entry.variant,
     challenges: entry.challenges,
     expansions: entry.expansions ?? [],
@@ -503,6 +532,7 @@ function copySeedHistory(): void {
     return [
       `${index + 1}. ${entry.seed}`,
       `Mode: ${entry.mode === "2" ? "2 Players" : "3-4 Players"}`,
+      `Edition: ${BOARD_EDITION_NAMES[entry.edition ?? "fifth"]}`,
       `Variant: ${VARIANT_NAMES[entry.variant]}`,
       `Rules: ${
         entry.mode === "2" ? RULE_PRESET_NAMES[entry.rulePreset ?? "balanced-neutral"] : "Standard"
@@ -520,6 +550,7 @@ function copySeedHistory(): void {
       `URL: ${
         createShareUrl(globalThis.location.href, entry.seed, {
           mode: entry.mode,
+          edition: entry.edition ?? "fifth",
           variant: entry.variant,
           challenges: entry.challenges,
           expansions: entry.expansions ?? [],
@@ -556,8 +587,23 @@ function copyText(text: string, message: string): void {
 
 function syncControlsFromState(): void {
   const mode = state.selection.mode;
+  const customHarbourLayout = state.selection.expansions.includes("five-six-players") ||
+    state.selection.expansions.includes("seafarers") ||
+    (mode === "2" && state.selection.variant.startsWith("compact"));
+  const fixedSixthEdition = state.selection.edition === "sixth" && !customHarbourLayout;
   byId("mode-34").classList.toggle("is-selected", mode === "3-4");
   byId("mode-2").classList.toggle("is-selected", mode === "2");
+  byId("edition-5").classList.toggle("is-selected", state.selection.edition === "fifth");
+  byId("edition-6").classList.toggle("is-selected", state.selection.edition === "sixth");
+  setDisabled("edition-5", customHarbourLayout);
+  setDisabled("edition-6", customHarbourLayout);
+  setDisabled("challenge-harbors", fixedSixthEdition);
+  byId("edition-control").classList.toggle("is-disabled", customHarbourLayout);
+  byId("edition-note").textContent = customHarbourLayout
+    ? "Custom compact and expansion layouts use their own harbor slots."
+    : state.selection.edition === "sixth"
+    ? "Uses fixed harbors printed on the 6th edition sea frame."
+    : "Uses removable 5th edition harbor tokens.";
   setDisabled("variant-select", mode !== "2");
   setDisabled("rule-preset-select", mode !== "2");
   setDisabled("challenge-neutral", mode !== "2");

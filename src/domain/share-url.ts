@@ -2,6 +2,7 @@ import type { GenerationSelection } from "../types.ts";
 import {
   defaultSelection,
   normalizeBalanceProfile,
+  normalizeBoardEdition,
   normalizeChallenges,
   normalizeExpansions,
   normalizeMode,
@@ -20,6 +21,7 @@ export function parseShareSearch(search: string): {
     seed: params.get("seed"),
     selection: {
       mode: normalizeMode(params.get("mode")),
+      edition: normalizeBoardEdition(params.get("edition")),
       variant: normalizeVariant(params.get("variant")),
       challenges: normalizeChallenges(rawChallenges),
       expansions: normalizeExpansions(rawExpansions),
@@ -37,6 +39,12 @@ export function createShareUrl(
   const url = new URL(currentUrl);
   url.searchParams.set("seed", seed);
   url.searchParams.set("mode", selection.mode);
+
+  if (selection.edition === "sixth") {
+    url.searchParams.set("edition", "6");
+  } else {
+    url.searchParams.delete("edition");
+  }
 
   if (selection.mode === "2") {
     url.searchParams.set("variant", selection.variant);

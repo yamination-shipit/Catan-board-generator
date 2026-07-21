@@ -1,5 +1,6 @@
 import type {
   BalanceProfile,
+  BoardEdition,
   Challenge,
   Expansion,
   GenerationOptions,
@@ -21,6 +22,7 @@ import {
   PORTS,
   RESOURCES,
   SEAFARERS_PORTS,
+  SIXTH_EDITION_PORTS,
 } from "./rules.ts";
 import { createRandomState, hashSeed, nextInt, shuffle } from "./rng.ts";
 
@@ -30,6 +32,7 @@ const resourceKeys = Object.keys(RESOURCES).filter((resource) =>
 
 export const defaultSelection: GenerationSelection = {
   mode: "3-4",
+  edition: "fifth",
   variant: "full-neutral",
   challenges: [],
   expansions: [],
@@ -39,6 +42,10 @@ export const defaultSelection: GenerationSelection = {
 
 export function normalizeMode(value: string | null): Mode {
   return value === "2" ? "2" : "3-4";
+}
+
+export function normalizeBoardEdition(value: string | null): BoardEdition {
+  return value === "6" ? "sixth" : "fifth";
 }
 
 export function normalizeVariant(value: string | null): Variant {
@@ -89,6 +96,7 @@ export function getGenerationOptions(
 
   return {
     layoutKey,
+    edition: selection.edition,
     compact: layoutKey === "compact",
     variant: selection.variant,
     challenges: [...selection.challenges],
@@ -136,13 +144,17 @@ export function getPortsForOptions(seed: string, options: GenerationOptions): re
 }
 
 function shouldShufflePorts(options: GenerationOptions): boolean {
-  return options.layoutKey === "seafarers" || options.challenges.includes("harbors");
+  if (options.layoutKey === "seafarers") return true;
+  if (!options.challenges.includes("harbors")) return false;
+  return options.layoutKey === "compact" || options.layoutKey === "5-6" ||
+    options.edition === "fifth";
 }
 
 function getBasePorts(options: GenerationOptions): readonly Port[] {
   if (options.layoutKey === "seafarers") return SEAFARERS_PORTS;
   if (options.layoutKey === "5-6") return FIVE_SIX_PORTS;
-  return options.compact ? COMPACT_PORTS : PORTS;
+  if (options.compact) return COMPACT_PORTS;
+  return options.edition === "sixth" ? SIXTH_EDITION_PORTS : PORTS;
 }
 
 function chooseScarceResource(seed: string): Resource {

@@ -5,6 +5,7 @@ export type Challenge = "scarce" | "harbors" | "neutral";
 export type Expansion = "five-six-players" | "seafarers" | "cities-knights";
 export type RulePreset = "balanced-neutral" | "open-duel" | "long-game";
 export type BalanceProfile = "classic" | "strict" | "wild";
+export type BoardEdition = "fifth" | "sixth";
 export type Variant =
   | "full-neutral"
   | "full-open"
@@ -47,6 +48,7 @@ export interface Port {
 
 export interface GenerationSelection {
   readonly mode: Mode;
+  readonly edition: BoardEdition;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
   readonly expansions: readonly Expansion[];
@@ -56,6 +58,7 @@ export interface GenerationSelection {
 
 export interface GenerationOptions {
   readonly layoutKey: LayoutKey;
+  readonly edition: BoardEdition;
   readonly compact: boolean;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
@@ -89,6 +92,7 @@ export interface BoardView {
 export interface SeedHistoryEntry {
   readonly seed: string;
   readonly mode: Mode;
+  readonly edition?: BoardEdition;
   readonly variant: Variant;
   readonly challenges: readonly Challenge[];
   readonly expansions?: readonly Expansion[];

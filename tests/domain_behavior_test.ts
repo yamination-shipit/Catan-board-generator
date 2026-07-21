@@ -18,6 +18,7 @@ import {
   PORTS,
   RESOURCES,
   SEAFARERS_PORTS,
+  SIXTH_EDITION_PORTS,
 } from "../src/domain/rules.ts";
 import { axialToPixel, getVertexPosition, type Point } from "../src/rendering/geometry.ts";
 import { renderBoardSvg } from "../src/rendering/svg.ts";
@@ -78,6 +79,7 @@ Deno.test("evaluateBoard_WhenHighNumbersTouch_ReducesTheScore", () => {
   ];
   const options = getGenerationOptions("score-seed", {
     mode: "3-4",
+    edition: "fifth",
     variant: "full-neutral",
     challenges: [],
     expansions: [],
@@ -125,6 +127,7 @@ Deno.test("getPortsForOptions_WhenHarborsChallengeIsEnabled_ShufflesDeterministi
   // Arrange
   const options = getGenerationOptions("port-seed", {
     mode: "2",
+    edition: "fifth",
     variant: "compact-tight",
     challenges: ["harbors"],
     expansions: [],
@@ -166,9 +169,35 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
   assert.deepEqual(ports, PORTS);
 });
 
+Deno.test("getPortsForOptions_WhenUsingSixthEdition_UsesFixedPrintedFrame", () => {
+  // Arrange
+  const options = getGenerationOptions(
+    "port-seed",
+    selection({ edition: "sixth", challenges: ["harbors"] }),
+  );
+
+  // Act
+  const ports = getPortsForOptions("port-seed", options);
+
+  // Assert
+  assert.deepEqual(ports, SIXTH_EDITION_PORTS);
+  assert.deepEqual(portSlots(ports), [
+    "2:4:1-2",
+    "3:3:2-3",
+    "4:2:2-3",
+    "4:0:3-4",
+    "3:0:4-5",
+    "1:0:4-5",
+    "0:0:5-0",
+    "0:2:0-1",
+    "1:3:1-2",
+  ]);
+});
+
 Deno.test("portFixtures_WhenRenderedOnAnyLayout_AttachOnlyToCoastalEdges", () => {
   // Arrange / Act / Assert
   assertPortsUseBoundaryEdges("3-4", PORTS);
+  assertPortsUseBoundaryEdges("3-4", SIXTH_EDITION_PORTS);
   assertPortsUseBoundaryEdges("compact", COMPACT_PORTS);
   assertPortsUseBoundaryEdges("5-6", FIVE_SIX_PORTS);
   assertPortsUseBoundaryEdges("seafarers", SEAFARERS_PORTS);
@@ -265,7 +294,7 @@ Deno.test("renderBoardSvg_WhenTileColorIsLight_UsesDarkResourceText", () => {
 Deno.test("createShareUrl_WhenChallengesAreEmpty_RemovesChallengeParameter", () => {
   // Arrange
   const currentUrl =
-    "https://example.test/?seed=old&mode=2&variant=compact-tight&challenges=scarce";
+    "https://example.test/?seed=old&mode=2&edition=6&variant=compact-tight&challenges=scarce";
 
   // Act
   const url = createShareUrl(
@@ -289,6 +318,7 @@ Deno.test("createShareUrl_WhenExpansionsAreSelected_PreservesThemOutsideTheSeed"
   // Act
   const url = createShareUrl(currentUrl, "fresh", {
     mode: "2",
+    edition: "fifth",
     variant: "compact-tight",
     challenges: [],
     expansions: ["seafarers", "cities-knights"],
@@ -306,7 +336,7 @@ Deno.test("createShareUrl_WhenExpansionsAreSelected_PreservesThemOutsideTheSeed"
 Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults", () => {
   // Arrange
   const search =
-    "?seed=abc&mode=bogus&variant=unknown&challenges=scarce,bad,neutral&expansions=seafarers,bad,seafarers&rules=unknown&balance=bad";
+    "?seed=abc&mode=bogus&edition=unknown&variant=unknown&challenges=scarce,bad,neutral&expansions=seafarers,bad,seafarers&rules=unknown&balance=bad";
 
   // Act
   const parsed = parseShareSearch(search);
@@ -316,6 +346,7 @@ Deno.test("parseShareSearch_WhenUnknownOptionsArePresent_FallsBackToSafeDefaults
     seed: "abc",
     selection: {
       mode: "3-4",
+      edition: "fifth",
       variant: "full-neutral",
       challenges: ["scarce", "neutral"],
       expansions: ["seafarers"],
@@ -334,6 +365,19 @@ Deno.test("createShareUrl_WhenBalanceIsClassic_RemovesStaleBalanceParameter", ()
 
   // Assert
   assert.equal(url, "https://example.test/?seed=fresh&mode=3-4");
+});
+
+Deno.test("createShareUrl_WhenSixthEditionIsSelected_PreservesEdition", () => {
+  // Arrange
+  const currentUrl = "https://example.test/?seed=old";
+
+  // Act
+  const url = createShareUrl(currentUrl, "fresh", selection({ edition: "sixth" }));
+  const parsed = parseShareSearch(new URL(url).search);
+
+  // Assert
+  assert.equal(url, "https://example.test/?seed=fresh&mode=3-4&edition=6");
+  assert.equal(parsed.selection.edition, "sixth");
 });
 
 Deno.test("seedToHexColor_WhenSeedChanges_ReturnsStableHexColors", () => {
@@ -379,6 +423,22 @@ Deno.test("upsertSeedHistory_WhenBalanceProfileDiffers_KeepsBothChoices", () => 
   assert.equal(history.length, 2);
   assert.equal(history[0]?.balanceProfile, "strict");
   assert.equal(history[1]?.balanceProfile, undefined);
+});
+
+Deno.test("upsertSeedHistory_WhenBoardEditionDiffers_KeepsBothChoices", () => {
+  // Arrange
+  const existing: readonly SeedHistoryEntry[] = [historyEntry("same", "3-4", [])];
+  const replacement: SeedHistoryEntry = {
+    ...historyEntry("same", "3-4", [], "2026-06-13T13:00:00.000Z"),
+    edition: "sixth",
+  };
+
+  // Act
+  const history = upsertSeedHistory(existing, replacement);
+
+  // Assert
+  assert.equal(history.length, 2);
+  assert.equal(history[0]?.edition, "sixth");
 });
 
 Deno.test("summarizeBoard_WhenUsingKnownSeed_MatchesDocumentationSnapshot", () => {
@@ -600,6 +660,7 @@ function portSlots(ports: readonly Port[]): readonly string[] {
 function selection(overrides: Partial<GenerationSelection> = {}): GenerationSelection {
   return {
     mode: "3-4",
+    edition: "fifth",
     variant: "full-neutral",
     challenges: [],
     expansions: [],

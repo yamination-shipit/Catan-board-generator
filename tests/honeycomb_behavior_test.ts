@@ -40,6 +40,7 @@ Deno.test({
       await assertResourceColorPreferencesPersist(page);
       await assertResourceHighlightingWorks(page);
       await assertPortHighlightingWorks(page);
+      await assertHarbourEditionToggleWorks(page);
 
       await page.locator("#generate-btn").click();
       await page.waitForSelector("#board-svg");
@@ -63,6 +64,9 @@ Deno.test({
       assert.equal(await page.locator("#variant-select").isEnabled(), true);
       assert.equal(await page.locator("#challenge-neutral").isEnabled(), true);
       await page.locator("#variant-select").selectOption("compact-tight");
+      assert.equal(await page.locator("#edition-5").isDisabled(), true);
+      assert.equal(await page.locator("#edition-6").isDisabled(), true);
+      assert.ok((await page.locator("#edition-note").textContent())?.includes("Custom compact"));
       await page.locator("#rule-preset-select").selectOption("balanced-neutral");
       await page.waitForSelector(".neutral-road");
       await assertNeutralHighlightingWorks(page);
@@ -95,6 +99,7 @@ Deno.test({
 async function assertAllHarbourLayoutsKeepTokensOverWater(page: Page): Promise<void> {
   const cases = [
     ["?seed=harbour-browser&mode=3-4", 9],
+    ["?seed=harbour-browser&mode=3-4&edition=6", 9],
     ["?seed=harbour-browser&mode=2&variant=compact-duel", 6],
     ["?seed=harbour-browser&mode=3-4&expansions=five-six-players", 11],
     ["?seed=harbour-browser&mode=3-4&expansions=seafarers", 9],
@@ -140,6 +145,34 @@ async function assertAllHarbourLayoutsKeepTokensOverWater(page: Page): Promise<v
     });
     assert.deepEqual(overlaps, [], `expected ${search} harbour tokens to stay over water`);
   }
+}
+
+async function assertHarbourEditionToggleWorks(page: Page): Promise<void> {
+  const fifthEditionCenters = await portCenters(page);
+  assert.equal(await page.locator("#edition-5").getAttribute("class"), "is-selected");
+  await page.locator("#challenge-harbors").check();
+  await page.waitForFunction(() => location.search.includes("challenges=harbors"));
+
+  await page.locator("#edition-6").click();
+  await page.waitForFunction(() => new URL(location.href).searchParams.get("edition") === "6");
+  assert.equal(new URL(page.url()).searchParams.has("challenges"), false);
+  assert.equal(await page.locator("#challenge-harbors").isDisabled(), true);
+  assert.ok((await page.locator("#rules-body").textContent())?.includes("fixed 6th edition"));
+  assert.notDeepEqual(await portCenters(page), fifthEditionCenters);
+
+  await page.locator("#edition-5").click();
+  await page.waitForFunction(() => !new URL(location.href).searchParams.has("edition"));
+  assert.equal(await page.locator("#challenge-harbors").isEnabled(), true);
+  assert.deepEqual(await portCenters(page), fifthEditionCenters);
+}
+
+function portCenters(page: Page): Promise<readonly string[]> {
+  return page.locator(".port-token").evaluateAll((tokens) =>
+    tokens.map((token) => {
+      const circle = token as SVGCircleElement;
+      return `${circle.cx.baseVal.value}:${circle.cy.baseVal.value}`;
+    })
+  );
 }
 
 function startStaticServer(): Deno.HttpServer {

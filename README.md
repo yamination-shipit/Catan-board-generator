@@ -10,6 +10,13 @@ deployment.
 - **3-4 Players**: Standard 19-hex Catan board
 - **2 Players**: Full and compact variants with optional neutral settlements
 
+### Board Editions
+
+- **5th Edition**: removable harbor tokens with optional seeded Harbor Scramble
+- **6th Edition**: fixed printed sea-frame harbors using the official 2025 setup
+- Edition choice is included in share links; compact and expansion scenarios retain their own harbor
+  layouts
+
 ### Board Balancing
 
 The generator uses intelligent algorithms to create balanced boards:
@@ -31,6 +38,8 @@ The generator uses intelligent algorithms to create balanced boards:
 - Save seed history locally in browser localStorage
 - Copy/export all saved history entries with share URLs and metadata
 - Toggle expansion choices in share URLs; 5-6 and Seafarers now change generated boards
+- Share an explicit 6th edition board with the `edition=6` URL parameter; omitted values retain the
+  5th edition default
 
 ### Mobile Layout
 

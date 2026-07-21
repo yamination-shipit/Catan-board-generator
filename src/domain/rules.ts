@@ -1,4 +1,5 @@
 import type {
+  BoardEdition,
   Challenge,
   Expansion,
   GhostSettlement,
@@ -189,6 +190,11 @@ export const CHALLENGE_NAMES: Record<Challenge, string> = {
   neutral: "Neutral pressure",
 };
 
+export const BOARD_EDITION_NAMES: Record<BoardEdition, string> = {
+  fifth: "5th Edition",
+  sixth: "6th Edition",
+};
+
 export const EXPANSION_NAMES: Record<Expansion, string> = {
   "five-six-players": "5-6 player extension",
   seafarers: "Seafarers",
@@ -244,6 +250,18 @@ export const PORTS: readonly Port[] = [
   { type: "brick", hexRow: 4, hexCol: 1, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
   { type: "wood", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
   { type: "3:1", hexRow: 1, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
+];
+
+export const SIXTH_EDITION_PORTS: readonly Port[] = [
+  { type: "3:1", hexRow: 2, hexCol: 4, vertices: [1, 2], label: "3:1", shortLabel: "?" },
+  { type: "brick", hexRow: 3, hexCol: 3, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
+  { type: "wood", hexRow: 4, hexCol: 2, vertices: [2, 3], label: "2:1", shortLabel: "Wood" },
+  { type: "3:1", hexRow: 4, hexCol: 0, vertices: [3, 4], label: "3:1", shortLabel: "?" },
+  { type: "wheat", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wheat" },
+  { type: "ore", hexRow: 1, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Ore" },
+  { type: "3:1", hexRow: 0, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
+  { type: "sheep", hexRow: 0, hexCol: 2, vertices: [0, 1], label: "2:1", shortLabel: "Sheep" },
+  { type: "3:1", hexRow: 1, hexCol: 3, vertices: [1, 2], label: "3:1", shortLabel: "?" },
 ];
 
 export const COMPACT_PORTS: readonly Port[] = [
