@@ -247,7 +247,7 @@ export const PORTS: readonly Port[] = [
   { type: "3:1", hexRow: 2, hexCol: 4, vertices: [1, 2], label: "3:1", shortLabel: "?" },
   { type: "sheep", hexRow: 3, hexCol: 3, vertices: [2, 3], label: "2:1", shortLabel: "Sheep" },
   { type: "3:1", hexRow: 4, hexCol: 2, vertices: [3, 4], label: "3:1", shortLabel: "?" },
-  { type: "brick", hexRow: 4, hexCol: 1, vertices: [2, 3], label: "2:1", shortLabel: "Brick" },
+  { type: "brick", hexRow: 4, hexCol: 0, vertices: [3, 4], label: "2:1", shortLabel: "Brick" },
   { type: "wood", hexRow: 3, hexCol: 0, vertices: [4, 5], label: "2:1", shortLabel: "Wood" },
   { type: "3:1", hexRow: 1, hexCol: 0, vertices: [5, 0], label: "3:1", shortLabel: "?" },
 ];
