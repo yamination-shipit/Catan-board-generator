@@ -8,6 +8,9 @@ setup:
 check:
     {{deno}} task check
 
+check-pr-title title:
+    {{deno}} task check:pr-title "{{title}}"
+
 test:
     {{deno}} task test
 

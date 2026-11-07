@@ -50,6 +50,8 @@ CLAUDE.md                       # This file - development guide
 ```bash
 just setup               # Verify local tooling
 just check               # Format check, lint, and type-check
+just check-pr-title 'fix(board): describe change'
+                         # Validate a PR title before opening or editing it
 just test                # Run behavior tests
 just build               # Generate dist/
 just ci                  # Run the same validation path as PR CI
