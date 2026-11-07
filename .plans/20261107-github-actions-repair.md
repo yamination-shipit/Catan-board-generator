@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation complete; final remote validation pending.
+Done.
 
 ## Goal
 
