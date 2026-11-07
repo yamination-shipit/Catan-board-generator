@@ -161,7 +161,7 @@ Deno.test("getPortsForOptions_WhenUsingStandardBoard_UsesOfficialFrameHarborSlot
       "2:4:1-2",
       "3:3:2-3",
       "4:2:3-4",
-      "4:1:2-3",
+      "4:0:3-4",
       "3:0:4-5",
       "1:0:5-0",
     ],
@@ -194,7 +194,7 @@ Deno.test("getPortsForOptions_WhenUsingSixthEdition_UsesFixedPrintedFrame", () =
   ]);
 });
 
-Deno.test("portFixtures_WhenRenderedOnAnyLayout_AttachOnlyToCoastalEdges", () => {
+Deno.test("portFixtures_WhenRenderedOnAnyLayout_UseSeparatedCoastalEdges", () => {
   // Arrange / Act / Assert
   assertPortsUseBoundaryEdges("3-4", PORTS);
   assertPortsUseBoundaryEdges("3-4", SIXTH_EDITION_PORTS);
@@ -616,6 +616,7 @@ function countBy(values: readonly string[]): Record<string, number> {
 
 function assertPortsUseBoundaryEdges(layoutKey: LayoutKey, ports: readonly Port[]): void {
   const layout = LAYOUTS[layoutKey];
+  const usedVertices = new Map<string, string>();
   ports.forEach((port) => {
     const hex = layout.find((candidate) =>
       candidate.row === port.hexRow && candidate.col === port.hexCol
@@ -646,6 +647,17 @@ function assertPortsUseBoundaryEdges(layoutKey: LayoutKey, ports: readonly Port[
       undefined,
       `expected port ${port.hexRow}:${port.hexCol}:${port.vertices.join("-")} to be coastal`,
     );
+
+    edge.forEach((point) => {
+      const vertexKey = `${point.x.toFixed(9)}:${point.y.toFixed(9)}`;
+      const slot = `${port.hexRow}:${port.hexCol}:${port.vertices.join("-")}`;
+      assert.equal(
+        usedVertices.get(vertexKey),
+        undefined,
+        `expected port ${slot} not to share a coastal vertex with ${usedVertices.get(vertexKey)}`,
+      );
+      usedVertices.set(vertexKey, slot);
+    });
   });
 }
 
