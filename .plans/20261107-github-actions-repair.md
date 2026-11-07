@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation complete; remote Honeycomb validation pending.
+Implementation complete; final remote validation pending.
 
 ## Goal
 
@@ -26,5 +26,6 @@ Repair the current CI, Pages, Release Please, PR-title, and stale pull-request f
 - Enable Release Please pull-request creation, repair PR metadata, and close the stale duplicate.
 - Install Chromium with the exact Playwright package pinned in `deno.json` and run the isolated
   browser integration test with the full permissions its subprocess and platform probes require.
+- Enforce the pinned toolchain and full local CI gate through pre-commit and pre-push checks.
 - Run the full local CI gate, then verify CI, Pages, Release Please, PR titles, and Honeycomb
   remotely.
