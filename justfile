@@ -23,6 +23,10 @@ build:
 ci:
     {{deno}} task ci
 
+pre-commit-check: setup ci
+
+pre-push-check: setup ci
+
 serve:
     {{deno}} task serve
 

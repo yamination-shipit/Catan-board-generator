@@ -77,6 +77,8 @@ just serve               # Build and serve dist/ on localhost:8080
 ## Workflow
 
 - Always commit and push when done with a task, unless explicitly instructed otherwise.
+- Git hooks run `just pre-commit-check` before commits and `just pre-push-check` before pushes. Both
+  commands verify the pinned toolchain and run the full local CI gate; never bypass them.
 - For non-trivial work, create and maintain a `.plans/` file.
 - For non-trivial design or compatibility changes, read relevant `docs/adr/` records and add a new
   ADR when the decision should guide future work.
