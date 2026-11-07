@@ -1,7 +1,7 @@
 name: PR Title
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, reopened, synchronize]
 
 permissions:
@@ -11,13 +11,17 @@ jobs:
   conventional-title:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version-file: .dvmrc
+
       - name: Validate conventional PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          conventional='^(feat|fix|docs|test|refactor|chore|build|ci|perf)(\([a-z0-9-]+\))?!?: .+'
-          if [[ ! "$PR_TITLE" =~ $conventional ]]; then
-            echo "PR title must be Conventional Commits, for example: feat(board): add typed generator"
-            echo "Actual: $PR_TITLE"
-            exit 1
-          fi
+        run: deno task check:pr-title "$PR_TITLE"
